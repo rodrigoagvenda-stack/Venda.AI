@@ -43,21 +43,45 @@ export function useUser() {
     const supabase = createClient();
 
     try {
-      // Fetch user AND company in ONE query (JOIN) para evitar múltiplas requests
+      // Primeiro, buscar o usuário
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('*, companies:company_id(*)')
+        .select('*')
         .eq('auth_user_id', authUserId)
         .single();
 
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        throw userError;
+      }
 
-      // Evitar set desnecessário se dados não mudaram
+      if (!userData) {
+        console.warn('User not found for auth_user_id:', authUserId);
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ User found:', userData);
       setUser(userData);
 
-      // Company já vem no JOIN
-      if (userData?.companies) {
-        setCompany(userData.companies as any);
+      // Se tem company_id, buscar a empresa
+      if (userData.company_id) {
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', userData.company_id)
+          .single();
+
+        if (companyError) {
+          console.error('Error fetching company:', companyError);
+        } else if (companyData) {
+          console.log('✅ Company found:', companyData);
+          setCompany(companyData as any);
+        } else {
+          console.warn('Company not found for company_id:', userData.company_id);
+        }
+      } else {
+        console.warn('User has no company_id');
       }
     } catch (error) {
       console.error('Error fetching user/company:', error);
