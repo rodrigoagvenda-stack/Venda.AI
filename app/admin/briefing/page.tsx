@@ -20,6 +20,7 @@ export default function BriefingListPage() {
   const itemsPerPage = 10;
 
   const formUrl = typeof window !== 'undefined' ? `${window.location.origin}/brief` : '';
+  const pautaUrl = typeof window !== 'undefined' ? `${window.location.origin}/pauta` : '';
 
   useEffect(() => {
     fetchResponses();
@@ -89,27 +90,51 @@ export default function BriefingListPage() {
         </Link>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Link do Formulário</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Compartilhe este link com seus clientes
-              </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Link do Briefing</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Formulário para novos clientes
+                </p>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 flex-col sm:flex-row">
-            <Input value={formUrl} readOnly className="font-mono text-xs sm:text-sm flex-1" />
-            <Button onClick={copyFormUrl} variant="outline" className="sm:w-auto">
-              <Copy className="h-4 w-4 sm:mr-0" />
-              <span className="sm:hidden ml-2">Copiar Link</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <Input value={formUrl} readOnly className="font-mono text-xs sm:text-sm flex-1" />
+              <Button onClick={copyFormUrl} variant="outline" className="sm:w-auto">
+                <Copy className="h-4 w-4 sm:mr-0" />
+                <span className="sm:hidden ml-2">Copiar Link</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Link da Pauta</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Formulário de pauta (Social Media / Tráfego)
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <Input value={pautaUrl} readOnly className="font-mono text-xs sm:text-sm flex-1" />
+              <Button onClick={() => { navigator.clipboard.writeText(pautaUrl); toast.success('Link copiado!'); }} variant="outline" className="sm:w-auto">
+                <Copy className="h-4 w-4 sm:mr-0" />
+                <span className="sm:hidden ml-2">Copiar Link</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
