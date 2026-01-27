@@ -26,15 +26,17 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 interface SidebarProps {
   hasVendAgro?: boolean;
   isAdmin?: boolean;
-  userName?: string;
-  userEmail?: string;
+  companyName?: string;
+  companyEmail?: string;
+  companyImage?: string;
 }
 
 export function Sidebar({
   hasVendAgro = false,
   isAdmin = false,
-  userName,
-  userEmail,
+  companyName,
+  companyEmail,
+  companyImage,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -108,32 +110,23 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-card border-r border-border transition-all duration-300',
-          isCollapsed ? 'md:w-20' : 'md:w-72'
+          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-black border-r border-border transition-all duration-300',
+          isCollapsed ? 'md:w-20' : 'md:w-64'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center h-20 px-6 border-b border-border/50">
+        <div className="flex items-center h-16 px-6">
           {!isCollapsed && (
-            <h1 className="text-2xl">
-              <span className="font-normal">vend</span>
+            <h1 className="text-xl">
+              <span className="font-normal text-white">vend</span>
               <span className="text-primary font-bold">.</span>
-              <span className="font-bold">AI</span>
+              <span className="font-bold text-white">AI</span>
             </h1>
           )}
         </div>
 
-        {/* Menu Label */}
-        {!isCollapsed && (
-          <div className="px-6 pt-6 pb-3">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Menu
-            </span>
-          </div>
-        )}
-
         {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 pt-4 space-y-1 overflow-y-auto">
           {links.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
@@ -143,29 +136,20 @@ export function Sidebar({
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',
+                  'group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50',
+                    ? 'bg-white/5 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5',
                   isCollapsed && 'justify-center px-2'
                 )}
                 title={isCollapsed ? link.label : undefined}
               >
-                <div
-                  className={cn(
-                    'flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
-                    isActive
-                      ? 'bg-primary-foreground/20'
-                      : 'bg-muted/50 group-hover:bg-muted'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
+                <Icon className="h-5 w-5 flex-shrink-0" />
                 {!isCollapsed && (
                   <>
-                    <span className="font-medium text-sm flex-1">{link.label}</span>
+                    <span className="text-sm flex-1">{link.label}</span>
                     {link.badge && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-bold border border-primary/30">
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium border border-primary/30">
                         {link.badge}
                       </span>
                     )}
@@ -176,24 +160,28 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* User Profile */}
-        <div className="p-4 border-t border-border/50">
+        {/* Company Profile */}
+        <div className="p-4 border-t border-white/10">
           <div
             className={cn(
-              'flex items-center gap-3 px-3 py-3 rounded-xl bg-accent/30',
+              'flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5',
               isCollapsed && 'justify-center px-2'
             )}
           >
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <span className="text-xs font-bold text-white">
-                {userName?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center overflow-hidden">
+              {companyImage ? (
+                <img src={companyImage} alt={companyName || 'Empresa'} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">
+                  {companyName?.charAt(0)?.toUpperCase() || 'E'}
+                </span>
+              )}
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userName || 'Usuário'}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {userEmail || 'user@vend.ai'}
+                <p className="text-sm font-medium text-white truncate">{companyName || 'Empresa'}</p>
+                <p className="text-xs text-gray-400 truncate">
+                  {companyEmail || 'empresa@vend.ai'}
                 </p>
               </div>
             )}
@@ -207,7 +195,7 @@ export function Sidebar({
               onClick={handleLogout}
               disabled={isLoggingOut}
               className={cn(
-                'flex-1 justify-start text-muted-foreground hover:text-foreground',
+                'flex-1 justify-start text-gray-400 hover:text-white hover:bg-white/5',
                 isCollapsed && 'justify-center px-2'
               )}
               size={isCollapsed ? 'icon' : 'default'}
@@ -223,7 +211,7 @@ export function Sidebar({
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full mt-2"
+            className="w-full mt-2 text-gray-400 hover:text-white hover:bg-white/5"
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4" />
@@ -235,7 +223,7 @@ export function Sidebar({
       </aside>
 
       {/* Spacer for content */}
-      <div className={cn('hidden md:block', isCollapsed ? 'md:w-20' : 'md:w-72')} />
+      <div className={cn('hidden md:block', isCollapsed ? 'md:w-20' : 'md:w-64')} />
     </>
   );
 }

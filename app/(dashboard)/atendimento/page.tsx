@@ -7,11 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessageSquare, Search, Send, Phone, Mail, Building2, Tag, User, Bot } from 'lucide-react';
+import { MessageSquare, Search, Send, Phone, Mail, Building2, Tag, User, Bot, Mic, Paperclip, ArrowLeft, Image, FileText, Video, Download, File, Clock, UserCircle2 } from 'lucide-react';
 import { useUser } from '@/lib/hooks/useUser';
 import { createClient } from '@/lib/supabase/client';
 import { formatDateTime } from '@/lib/utils/format';
 import { toast } from 'sonner';
+import { AudioRecorder } from '@/components/chat/AudioRecorder';
+import { WhatsAppAudioPlayer } from '@/components/chat/WhatsAppAudioPlayer';
+import { MessageContextMenu } from '@/components/chat/MessageContextMenu';
+import { DeleteMessageDialog } from '@/components/chat/DeleteMessageDialog';
+import { ForwardMessageDialog } from '@/components/chat/ForwardMessageDialog';
+import { AttachmentOptionsDialog } from '@/components/chat/AttachmentOptionsDialog';
+import { EditMessageDialog } from '@/components/chat/EditMessageDialog';
+import { ScheduleMessageDialog } from '@/components/chat/ScheduleMessageDialog';
+import { QuickReplyMenu } from '@/components/chat/QuickReplyMenu';
+import { AssignChatDialog } from '@/components/chat/AssignChatDialog';
+import { LeadInfoSidebar } from '@/components/atendimento/LeadInfoSidebar';
+import type { Lead } from '@/types/database.types';
 
 interface Conversation {
   id: number;
@@ -23,16 +35,14 @@ interface Conversation {
   status_da_conversa: string;
   etiquetas: string[];
   id_do_lead?: number;
-  lead?: {
-    company_name: string;
-    contact_name: string;
-    email: string;
-    status: string;
-  };
+  lead?: Lead;
+  assigned_to?: number | null;
 }
 
 interface Message {
-  id: number;
+  id: number | string; // Permitir string para IDs temporários (UI otimista)
+  company_id?: number;
+  id_da_conversacao?: number;
   texto_da_mensagem: string;
   tipo_de_mensagem: string;
   direcao: 'inbound' | 'outbound';
@@ -40,6 +50,11 @@ interface Message {
   sender_user_id?: string;
   status: string;
   carimbo_de_data_e_hora: string;
+  url_da_midia?: string;
+  reactions?: string[]; // Array de emojis
+  is_edited?: boolean;
+  edited_at?: string;
+  is_pinned?: boolean;
   user?: {
     name: string;
   };
@@ -55,7 +70,20 @@ export default function AtendimentoPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);
+  const [imageCaption, setImageCaption] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; messageId: number | string | null }>({ open: false, messageId: null });
+  const [forwardDialog, setForwardDialog] = useState<{ open: boolean; messageId: number | string | null }>({ open: false, messageId: null });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; message: Message | null }>({ open: false, message: null });
+  const [scheduleDialog, setScheduleDialog] = useState(false);
+  const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
+  const [templateMenuPosition, setTemplateMenuPosition] = useState({ top: 0, left: 0 });
+  const [assignDialog, setAssignDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Carregar conversas
   useEffect(() => {
@@ -101,7 +129,14 @@ export default function AtendimentoPage() {
           filter: `id_da_conversacao=eq.${selectedConversation.id}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          // Evitar duplicatas (UI otimista já adicionou)
+          setMessages((prev) => {
+            const newMessage = payload.new as Message;
+            const exists = prev.some(msg =>
+              typeof msg.id === 'number' && msg.id === newMessage.id
+            );
+            return exists ? prev : [...prev, newMessage];
+          });
           scrollToBottom();
         }
       )
@@ -130,12 +165,7 @@ export default function AtendimentoPage() {
         .from('conversas_do_whatsapp')
         .select(`
           *,
-          lead:leads!conversas_do_whatsapp_id_do_lead_fkey(
-            company_name,
-            contact_name,
-            email,
-            status
-          )
+          lead:leads!conversas_do_whatsapp_id_do_lead_fkey(*)
         `)
         .eq('company_id', company!.id)
         .order('hora_da_ultima_mensagem', { ascending: false });
@@ -156,6 +186,7 @@ export default function AtendimentoPage() {
           user:users!mensagens_do_whatsapp_sender_user_id_fkey(name)
         `)
         .eq('id_da_conversacao', conversationId)
+        .eq('company_id', company!.id) // 🔒 Segurança: garante isolamento por empresa
         .order('carimbo_de_data_e_hora', { ascending: true });
 
       if (error) throw error;
@@ -170,7 +201,8 @@ export default function AtendimentoPage() {
       await supabase
         .from('conversas_do_whatsapp')
         .update({ contagem_nao_lida: 0 })
-        .eq('id', conversationId);
+        .eq('id', conversationId)
+        .eq('company_id', company!.id); // 🔒 Segurança: garante isolamento por empresa
     } catch (error) {
       console.error('Error marking as read:', error);
     }
@@ -180,7 +212,28 @@ export default function AtendimentoPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation || !user) return;
 
+    const messageText = newMessage.trim();
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // UI Otimista: Adicionar mensagem imediatamente
+    const optimisticMessage: Message = {
+      id: tempId,
+      company_id: company!.id,
+      id_da_conversacao: selectedConversation.id,
+      texto_da_mensagem: messageText,
+      tipo_de_mensagem: 'text',
+      direcao: 'outbound',
+      sender_type: 'human',
+      sender_user_id: user.user_id,
+      status: 'sending', // Status temporário
+      carimbo_de_data_e_hora: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
     setLoading(true);
+    scrollToBottom();
+
     try {
       const response = await fetch('/api/whatsapp/send', {
         method: 'POST',
@@ -188,7 +241,7 @@ export default function AtendimentoPage() {
         body: JSON.stringify({
           conversationId: selectedConversation.id,
           phoneNumber: selectedConversation.numero_de_telefone,
-          message: newMessage,
+          message: messageText,
           companyId: company!.id,
           userId: user.user_id,
         }),
@@ -197,14 +250,503 @@ export default function AtendimentoPage() {
       const data = await response.json();
       if (!data.success) throw new Error(data.message);
 
-      setNewMessage('');
+      // Atualizar mensagem otimista com dados reais do servidor
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === tempId ? { ...data.data, status: 'sent' } : msg
+        )
+      );
       toast.success('Mensagem enviada!');
     } catch (error: any) {
       console.error('Error sending message:', error);
+      // Remover mensagem otimista em caso de erro
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      setNewMessage(messageText); // Restaurar texto
       toast.error(error.message || 'Erro ao enviar mensagem');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCopyMessage(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Mensagem copiada!');
+    } catch (error) {
+      toast.error('Erro ao copiar mensagem');
+    }
+  }
+
+  async function handleDeleteForMe(messageId: number | string) {
+    if (typeof messageId === 'string') return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/whatsapp/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          deleteForEveryone: false,
+          companyId: company!.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      toast.success('Mensagem apagada para você');
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      toast.error(error.message || 'Erro ao apagar mensagem');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeleteForEveryone(messageId: number | string) {
+    if (typeof messageId === 'string') return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/whatsapp/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          deleteForEveryone: true,
+          companyId: company!.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      toast.success('Mensagem apagada para todos');
+    } catch (error: any) {
+      console.error('Error deleting message for everyone:', error);
+      toast.error(error.message || 'Erro ao apagar mensagem');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForwardMessage(selectedConversationIds: number[]) {
+    if (!forwardDialog.messageId || typeof forwardDialog.messageId === 'string') return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/whatsapp/forward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId: forwardDialog.messageId,
+          conversationIds: selectedConversationIds,
+          companyId: company!.id,
+          userId: user!.user_id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      toast.success(data.message);
+      setForwardDialog({ open: false, messageId: null });
+    } catch (error: any) {
+      console.error('Error forwarding message:', error);
+      toast.error(error.message || 'Erro ao encaminhar mensagem');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleReactToMessage(messageId: number | string, emoji: string) {
+    if (typeof messageId === 'string') return; // Não reagir a mensagens otimistas
+
+    // Atualizar UI imediatamente (otimista)
+    setMessages(prev =>
+      prev.map(msg => {
+        if (msg.id === messageId) {
+          const currentReactions = msg.reactions || [];
+          const hasReaction = currentReactions.includes(emoji);
+          return {
+            ...msg,
+            reactions: hasReaction
+              ? currentReactions.filter(r => r !== emoji)
+              : [...currentReactions, emoji]
+          };
+        }
+        return msg;
+      })
+    );
+
+    // Enviar reação via API para WhatsApp
+    try {
+      const response = await fetch('/api/whatsapp/react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          emoji,
+          companyId: company!.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      console.error('Error sending reaction:', error);
+      toast.error(error.message || 'Erro ao enviar reação');
+      // Reverter mudança otimista em caso de erro
+      setMessages(prev =>
+        prev.map(msg => {
+          if (msg.id === messageId) {
+            const currentReactions = msg.reactions || [];
+            const hasReaction = currentReactions.includes(emoji);
+            return {
+              ...msg,
+              reactions: hasReaction
+                ? currentReactions.filter(r => r !== emoji)
+                : [...currentReactions, emoji]
+            };
+          }
+          return msg;
+        })
+      );
+    }
+  }
+
+  async function handleSendAudio(audioBlob: Blob, duration: number) {
+    if (!selectedConversation || !user) return;
+
+    setLoading(true);
+    try {
+      // 1. Upload do áudio para o Supabase Storage
+      const fileName = `audio_${Date.now()}.webm`;
+      const filePath = `${company!.id}/whatsapp/${selectedConversation.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError} = await supabase.storage
+        .from('whatsapp-media')
+        .upload(filePath, audioBlob, {
+          contentType: 'audio/webm',
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Pegar URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('whatsapp-media')
+        .getPublicUrl(filePath);
+
+      // 3. Enviar via API
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: selectedConversation.id,
+          phoneNumber: selectedConversation.numero_de_telefone,
+          message: '🎵 Áudio',
+          messageType: 'audio',
+          mediaUrl: publicUrl,
+          companyId: company!.id,
+          userId: user.user_id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      setShowAudioRecorder(false);
+      toast.success('Áudio enviado!');
+    } catch (error: any) {
+      console.error('Error sending audio:', error);
+      toast.error(error.message || 'Erro ao enviar áudio');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSendFile(file: File, type: 'image' | 'document' | 'video', caption?: string) {
+    if (!selectedConversation || !user) return;
+
+    setLoading(true);
+    try {
+      // 1. Upload do arquivo para o Supabase Storage
+      const ext = file.name.split('.').pop();
+      const fileName = `${type}_${Date.now()}.${ext}`;
+      const filePath = `${company!.id}/whatsapp/${selectedConversation.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('whatsapp-media')
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: '3600',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2. Pegar URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('whatsapp-media')
+        .getPublicUrl(filePath);
+
+      // 3. Enviar via API
+      const defaultMessage = type === 'image' ? '📷 Imagem' : type === 'document' ? '📄 Documento' : '🎥 Vídeo';
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: selectedConversation.id,
+          phoneNumber: selectedConversation.numero_de_telefone,
+          message: caption || defaultMessage,
+          messageType: type,
+          mediaUrl: publicUrl,
+          filename: file.name,
+          companyId: company!.id,
+          userId: user.user_id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      toast.success(`${type === 'image' ? 'Imagem' : type === 'document' ? 'Documento' : 'Vídeo'} enviado!`);
+    } catch (error: any) {
+      console.error(`Error sending ${type}:`, error);
+      toast.error(error.message || `Erro ao enviar ${type}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleFileSelect(type: 'image' | 'document' | 'video') {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = type === 'image' ? 'image/*' : type === 'document' ? '.pdf,.doc,.docx,.xls,.xlsx,.txt' : 'video/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // Se for imagem, mostrar preview
+        if (type === 'image') {
+          const url = URL.createObjectURL(file);
+          setImagePreview({ file, url });
+          setImageCaption('');
+        } else {
+          // Senão, enviar diretamente
+          await handleSendFile(file, type);
+        }
+      }
+    };
+    input.click();
+  }
+
+  async function handleSendImageWithPreview() {
+    if (!imagePreview) return;
+
+    setLoading(true);
+    try {
+      await handleSendFile(imagePreview.file, 'image', imageCaption);
+      setImagePreview(null);
+      setImageCaption('');
+      URL.revokeObjectURL(imagePreview.url);
+    } catch (error) {
+      console.error('Error sending image:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleCancelImagePreview() {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview.url);
+      setImagePreview(null);
+      setImageCaption('');
+    }
+  }
+
+  // Handler para editar mensagem
+  async function handleEditMessage(messageId: number | string, newMessage: string) {
+    if (typeof messageId === 'string') return;
+
+    try {
+      const response = await fetch(`/api/whatsapp/messages/${messageId}/edit`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newMessage,
+          companyId: company!.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      // Atualizar mensagem localmente
+      setMessages(prev =>
+        prev.map(msg => msg.id === messageId ? data.data : msg)
+      );
+      toast.success('Mensagem editada!');
+    } catch (error: any) {
+      console.error('Error editing message:', error);
+      toast.error(error.message || 'Erro ao editar mensagem');
+      throw error;
+    }
+  }
+
+  // Handler para fixar/desfixar mensagem
+  async function handlePinMessage(messageId: number | string, isPinned: boolean) {
+    if (typeof messageId === 'string') return;
+
+    try {
+      const response = await fetch(`/api/whatsapp/messages/${messageId}/pin`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isPinned,
+          companyId: company!.id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      // Atualizar mensagem localmente
+      setMessages(prev =>
+        prev.map(msg => msg.id === messageId ? data.data : msg)
+      );
+      toast.success(isPinned ? 'Mensagem fixada!' : 'Mensagem desafixada!');
+    } catch (error: any) {
+      console.error('Error pinning message:', error);
+      toast.error(error.message || 'Erro ao fixar mensagem');
+    }
+  }
+
+  // Handler para enviar status "digitando..."
+  function handleTyping() {
+    if (!selectedConversation) return;
+
+    // Limpar timeout anterior
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Enviar status de digitando
+    fetch('/api/whatsapp/presence/typing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumber: selectedConversation.numero_de_telefone,
+        companyId: company!.id,
+      }),
+    }).catch(error => {
+      console.error('Error sending typing status:', error);
+    });
+
+    // Configurar timeout para parar de enviar após 3 segundos
+    typingTimeoutRef.current = setTimeout(() => {
+      typingTimeoutRef.current = null;
+    }, 3000);
+  }
+
+  // Handler para agendar mensagem
+  async function handleScheduleMessage(date: string, time: string) {
+    if (!selectedConversation || !newMessage.trim()) return;
+
+    const scheduledFor = new Date(`${date}T${time}`).toISOString();
+
+    try {
+      const response = await fetch('/api/messages/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: selectedConversation.id,
+          leadId: selectedConversation.id_do_lead,
+          content: newMessage.trim(),
+          type: 'text',
+          scheduledFor,
+          companyId: company!.id,
+          userId: user!.user_id,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) throw new Error(data.message);
+
+      toast.success('Mensagem agendada com sucesso!');
+      setNewMessage('');
+    } catch (error: any) {
+      console.error('Error scheduling message:', error);
+      toast.error(error.message || 'Erro ao agendar mensagem');
+      throw error;
+    }
+  }
+
+  // Template handling functions
+  function handleMessageInputChange(value: string) {
+    setNewMessage(value);
+    handleTyping();
+
+    // Detectar se usuário digitou "/"
+    if (value.startsWith('/') && inputRef.current) {
+      // Calcular posição do menu
+      const rect = inputRef.current.getBoundingClientRect();
+      setTemplateMenuPosition({
+        top: rect.top - 320, // Posicionar acima do input
+        left: rect.left,
+      });
+      setShowTemplateMenu(true);
+    } else {
+      setShowTemplateMenu(false);
+    }
+  }
+
+  function substituteVariables(content: string): string {
+    let result = content;
+
+    // Variáveis disponíveis
+    const variables: Record<string, string> = {
+      nome: selectedConversation?.nome_do_contato || selectedConversation?.numero_de_telefone || '',
+      empresa: selectedConversation?.lead?.company_name || '',
+      telefone: selectedConversation?.numero_de_telefone || '',
+      usuario: user?.name || '',
+      minha_empresa: company?.name || '',
+    };
+
+    // Substituir todas as variáveis
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+      result = result.replace(regex, value);
+    });
+
+    return result;
+  }
+
+  async function handleTemplateSelect(template: any) {
+    // Substituir variáveis no conteúdo do template
+    const contentWithVariables = substituteVariables(template.content);
+
+    // Inserir no campo de mensagem
+    setNewMessage(contentWithVariables);
+    setShowTemplateMenu(false);
+
+    // Incrementar contador de uso
+    try {
+      await fetch(`/api/templates/${template.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: company!.id }),
+      });
+    } catch (error) {
+      console.error('Error incrementing template usage:', error);
+    }
+
+    // Focar no input
+    inputRef.current?.focus();
   }
 
   const filteredConversations = conversations.filter((conv) =>
@@ -222,19 +764,92 @@ export default function AtendimentoPage() {
       .slice(0, 2) || '??';
   };
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <MessageSquare className="h-8 w-8 text-primary" />
-          Atendimento WhatsApp
-        </h1>
-      </div>
+  const renderMessageContent = (msg: Message) => {
+    // Se tem mídia, renderiza o preview
+    if (msg.url_da_midia) {
+      switch (msg.tipo_de_mensagem) {
+        case 'image':
+          return (
+            <div className="space-y-2">
+              <img
+                src={msg.url_da_midia}
+                alt="Imagem enviada"
+                className="rounded-lg max-h-96 max-w-md object-contain"
+                loading="lazy"
+              />
+              {msg.texto_da_mensagem && !msg.texto_da_mensagem.startsWith('📷') && (
+                <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>
+              )}
+            </div>
+          );
 
-      <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
+        case 'video':
+          return (
+            <div className="space-y-2">
+              <video
+                src={msg.url_da_midia}
+                controls
+                className="max-w-full rounded-lg max-h-96"
+              >
+                Seu navegador não suporta vídeo.
+              </video>
+              {msg.texto_da_mensagem && !msg.texto_da_mensagem.startsWith('🎥') && (
+                <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>
+              )}
+            </div>
+          );
+
+        case 'audio':
+          return (
+            <div className="space-y-2">
+              <WhatsAppAudioPlayer
+                src={msg.url_da_midia}
+                isOutbound={msg.direcao === 'outbound'}
+              />
+              {msg.texto_da_mensagem && !msg.texto_da_mensagem.startsWith('🎵') && (
+                <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>
+              )}
+            </div>
+          );
+
+        case 'document':
+          const fileName = msg.url_da_midia.split('/').pop() || 'documento';
+          return (
+            <div className="space-y-2">
+              <a
+                href={msg.url_da_midia}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-3 bg-background/50 rounded-lg hover:bg-background/80 transition-colors"
+              >
+                <File className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{fileName}</p>
+                  <p className="text-xs text-muted-foreground">Clique para baixar</p>
+                </div>
+                <Download className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              </a>
+              {msg.texto_da_mensagem && !msg.texto_da_mensagem.startsWith('📄') && (
+                <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>
+              )}
+            </div>
+          );
+
+        default:
+          return <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>;
+      }
+    }
+
+    // Se não tem mídia, só renderiza o texto
+    return <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>;
+  };
+
+  return (
+    <div className="h-full w-full overflow-hidden">
+      <div className="h-full grid grid-cols-12 gap-2 overflow-hidden">
         {/* Lista de Conversas */}
-        <Card className="col-span-12 lg:col-span-3 flex flex-col">
-          <CardHeader>
+        <Card className={`col-span-12 lg:col-span-3 flex flex-col overflow-hidden ${selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
               Conversas
@@ -249,7 +864,7 @@ export default function AtendimentoPage() {
               />
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto space-y-2">
+          <CardContent className="flex-1 overflow-y-auto space-y-2 scrollbar-minimal">
             {filteredConversations.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 Nenhuma conversa encontrada
@@ -300,13 +915,21 @@ export default function AtendimentoPage() {
         </Card>
 
         {/* Área de Chat */}
-        <Card className="col-span-12 lg:col-span-6 flex flex-col">
+        <Card className={`col-span-12 lg:col-span-6 flex flex-col overflow-hidden ${!selectedConversation ? 'hidden lg:flex' : 'flex'}`}>
           {selectedConversation ? (
             <>
               {/* Header da Conversa */}
-              <CardHeader className="border-b">
+              <CardHeader className="border-b flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="lg:hidden"
+                      onClick={() => setSelectedConversation(null)}
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
                     <Avatar className="h-10 w-10">
                       <AvatarFallback>
                         {getInitials(
@@ -328,6 +951,15 @@ export default function AtendimentoPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAssignDialog(true)}
+                      title={selectedConversation.assigned_to ? "Transferir atendimento" : "Atribuir atendimento"}
+                    >
+                      <UserCircle2 className="h-4 w-4 mr-2" />
+                      {selectedConversation.assigned_to ? "Transferir" : "Atribuir"}
+                    </Button>
                     <Badge variant="outline">
                       {selectedConversation.status_da_conversa}
                     </Badge>
@@ -360,11 +992,11 @@ export default function AtendimentoPage() {
               </CardHeader>
 
               {/* Mensagens */}
-              <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+              <CardContent className="flex-1 overflow-y-auto p-[20px] space-y-4 scrollbar-minimal">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex gap-3 ${
+                    className={`flex gap-2 ${
                       msg.direcao === 'outbound' ? 'justify-end' : 'justify-start'
                     }`}
                   >
@@ -375,40 +1007,71 @@ export default function AtendimentoPage() {
                         </AvatarFallback>
                       </Avatar>
                     )}
-                    <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        msg.direcao === 'outbound'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
+                    <MessageContextMenu
+                      isOutbound={msg.direcao === 'outbound'}
+                      onReact={(emoji) => handleReactToMessage(msg.id, emoji)}
+                      onCopy={() => handleCopyMessage(msg.texto_da_mensagem)}
+                      onEdit={msg.direcao === 'outbound' ? () => setEditDialog({ open: true, message: msg }) : undefined}
+                      onForward={() => setForwardDialog({ open: true, messageId: msg.id })}
+                      onPin={() => handlePinMessage(msg.id, !msg.is_pinned)}
+                      onDelete={msg.direcao === 'outbound' ? () => setDeleteDialog({ open: true, messageId: msg.id }) : undefined}
+                      className={msg.direcao === 'outbound' && (msg.tipo_de_mensagem === 'image' || msg.tipo_de_mensagem === 'video') ? 'ml-auto' : ''}
                     >
-                      {msg.direcao === 'outbound' && (
-                        <div className="flex items-center gap-1 mb-1 text-xs opacity-80">
-                          {msg.sender_type === 'ai' ? (
-                            <>
-                              <Bot className="h-3 w-3" />
-                              IA
-                            </>
-                          ) : (
-                            <>
-                              <User className="h-3 w-3" />
-                              {msg.user?.name || 'Você'}
-                            </>
-                          )}
-                        </div>
-                      )}
-                      <p className="text-sm whitespace-pre-wrap">{msg.texto_da_mensagem}</p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          msg.direcao === 'outbound' ? 'opacity-80' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {formatDateTime(msg.carimbo_de_data_e_hora)}
-                      </p>
-                    </div>
+                        <div
+                          className={`${
+                            msg.tipo_de_mensagem === 'image' || msg.tipo_de_mensagem === 'video'
+                              ? 'w-fit'
+                              : 'w-full max-w-full'
+                          } rounded-2xl p-4 cursor-pointer ${
+                            msg.direcao === 'outbound'
+                              ? 'bg-[#005c4b] text-white'
+                              : 'bg-muted'
+                          } ${msg.status === 'sending' ? 'opacity-60' : ''}`}
+                        >
+                        {msg.direcao === 'outbound' && (
+                          <div className="flex items-center gap-1 mb-1 text-xs opacity-80">
+                            {msg.sender_type === 'ai' ? (
+                              <>
+                                <Bot className="h-3 w-3" />
+                                IA
+                              </>
+                            ) : (
+                              <>
+                                <User className="h-3 w-3" />
+                                {msg.user?.name || 'Você'}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {msg.is_pinned && (
+                          <Badge variant="secondary" className="mb-2 text-xs">
+                            📌 Fixada
+                          </Badge>
+                        )}
+                        {renderMessageContent(msg)}
+                        {msg.reactions && msg.reactions.length > 0 && (
+                          <div className="flex gap-1 mt-2">
+                            {msg.reactions.map((reaction, idx) => (
+                              <span key={idx} className="text-base">
+                                {reaction}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <p
+                          className={`text-xs mt-1 flex items-center gap-1 ${
+                            msg.direcao === 'outbound' ? 'opacity-80' : 'text-muted-foreground'
+                          }`}
+                        >
+                          {formatDateTime(msg.carimbo_de_data_e_hora)}
+                          {msg.is_edited && ' • Editada'}
+                          {msg.status === 'sending' && ' • Enviando...'}
+                        </p>
+                      </div>
+                    </MessageContextMenu>
                     {msg.direcao === 'outbound' && (
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                        <AvatarFallback className="text-xs bg-green-600 text-white">
                           {msg.sender_type === 'ai' ? (
                             <Bot className="h-4 w-4" />
                           ) : (
@@ -423,18 +1086,105 @@ export default function AtendimentoPage() {
               </CardContent>
 
               {/* Input de Mensagem */}
-              <div className="border-t p-4">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <Input
-                    placeholder="Digite sua mensagem..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    disabled={loading}
+              <div className="border-t p-4 flex-shrink-0">
+                {imagePreview ? (
+                  <div className="space-y-3">
+                    <div className="relative rounded overflow-hidden bg-black/5">
+                      <img
+                        src={imagePreview.url}
+                        alt="Preview"
+                        className="max-h-64 w-full object-contain"
+                      />
+                      <button
+                        onClick={handleCancelImagePreview}
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5"
+                        title="Cancelar"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={imageCaption}
+                        onChange={(e) => setImageCaption(e.target.value)}
+                        placeholder="Adicione uma legenda..."
+                        className="flex-1"
+                        disabled={loading}
+                      />
+                      <Button
+                        onClick={handleSendImageWithPreview}
+                        disabled={loading}
+                        className="bg-[#005c4b] hover:bg-[#004d3d]"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : showAudioRecorder ? (
+                  <AudioRecorder
+                    onSendAudio={handleSendAudio}
+                    onCancel={() => setShowAudioRecorder(false)}
                   />
-                  <Button type="submit" disabled={loading || !newMessage.trim()}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </form>
+                ) : (
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowAttachmentOptions(true)}
+                      disabled={loading}
+                      title="Anexar"
+                      className="text-muted-foreground"
+                    >
+                      <Paperclip className="h-5 w-5" />
+                    </Button>
+                    <Input
+                      ref={inputRef}
+                      placeholder="Digite sua mensagem... (/ para templates)"
+                      value={newMessage}
+                      onChange={(e) => handleMessageInputChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (newMessage.trim()) {
+                            handleSendMessage(e);
+                          }
+                        }
+                      }}
+                      disabled={loading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setScheduleDialog(true)}
+                      disabled={loading || !newMessage.trim()}
+                      title="Agendar envio"
+                      className="text-muted-foreground"
+                    >
+                      <Clock className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      type={newMessage.trim() ? 'submit' : 'button'}
+                      size="icon"
+                      onClick={() => {
+                        if (!newMessage.trim()) {
+                          setShowAudioRecorder(true);
+                        }
+                      }}
+                      disabled={loading}
+                      className="bg-[#005c4b] hover:bg-[#004d3d]"
+                    >
+                      {newMessage.trim() ? (
+                        <Send className="h-4 w-4" />
+                      ) : (
+                        <Mic className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </form>
+                )}
               </div>
             </>
           ) : (
@@ -450,121 +1200,133 @@ export default function AtendimentoPage() {
         </Card>
 
         {/* Lead Info Sidebar */}
-        <Card className="col-span-12 lg:col-span-3 flex flex-col overflow-hidden">
-          {selectedConversation?.lead ? (
-            <>
-              <CardHeader className="border-b">
-                <CardTitle className="text-base">Informações do Lead</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* Company Info */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    Empresa
-                  </h4>
-                  <p className="text-sm font-medium">{selectedConversation.lead.company_name}</p>
-                  {selectedConversation.lead.contact_name && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Contato: {selectedConversation.lead.contact_name}
-                    </p>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Contact Info */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Telefone:</span>
-                  </div>
-                  <p className="text-sm font-medium pl-6">
-                    {selectedConversation.numero_de_telefone}
-                  </p>
-                </div>
-
-                {selectedConversation.lead.email && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Email:</span>
-                    </div>
-                    <p className="text-sm font-medium pl-6">
-                      {selectedConversation.lead.email}
-                    </p>
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Status */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">Status</h4>
-                  <Badge variant="outline" className="w-full justify-center">
-                    {selectedConversation.lead.status}
-                  </Badge>
-                </div>
-
-                {/* Tags */}
-                {selectedConversation.etiquetas && selectedConversation.etiquetas.length > 0 && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                        <Tag className="h-4 w-4" />
-                        Etiquetas
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedConversation.etiquetas.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <Separator />
-
-                {/* Conversation Status */}
-                <div>
-                  <h4 className="text-sm font-semibold mb-2">Status da Conversa</h4>
-                  <Badge className="w-full justify-center">
-                    {selectedConversation.status_da_conversa}
-                  </Badge>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="pt-4">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Ver Lead Completo
-                  </Button>
-                </div>
-              </CardContent>
-            </>
-          ) : selectedConversation ? (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="text-center">
-                <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Este contato não está vinculado a um lead
-                </p>
-                <Button variant="outline" size="sm" className="mt-4">
-                  Criar Lead
-                </Button>
-              </div>
-            </div>
-          ) : (
+        {selectedConversation?.lead ? (
+          <LeadInfoSidebar
+            lead={selectedConversation.lead}
+            phone={selectedConversation.numero_de_telefone}
+            companyId={company!.id}
+            userId={user!.user_id}
+            chatId={selectedConversation.id}
+            tags={selectedConversation.etiquetas || []}
+            onLeadUpdate={(updatedLead) => {
+              // Atualizar o lead na conversa selecionada
+              setSelectedConversation((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      lead: updatedLead,
+                    }
+                  : prev
+              );
+              // Recarregar conversas para atualizar Kanban via Realtime
+              fetchConversations();
+            }}
+            onTagsUpdate={(updatedTags) => {
+              // Atualizar tags na conversa selecionada
+              setSelectedConversation((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      etiquetas: updatedTags,
+                    }
+                  : prev
+              );
+              // Recarregar conversas para atualizar sidebar
+              fetchConversations();
+            }}
+          />
+        ) : (
+          <Card className="hidden lg:flex lg:col-span-3 flex-col overflow-hidden">
             <div className="flex-1 flex items-center justify-center p-6">
               <p className="text-sm text-muted-foreground text-center">
                 Selecione uma conversa para ver as informações do lead
               </p>
             </div>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
+
+      {/* Attachment Options Dialog */}
+      <AttachmentOptionsDialog
+        open={showAttachmentOptions}
+        onOpenChange={setShowAttachmentOptions}
+        onSelectDocument={() => handleFileSelect('document')}
+        onSelectImage={() => handleFileSelect('image')}
+        onSelectVideo={() => handleFileSelect('video')}
+        onSelectCamera={() => toast.info('Câmera em breve')}
+        onSelectAudio={() => setShowAudioRecorder(true)}
+        onSelectContact={() => toast.info('Contato em breve')}
+        onSelectPoll={() => toast.info('Enquete em breve')}
+        onSelectEvent={() => toast.info('Evento em breve')}
+        onSelectSticker={() => toast.info('Figurinha em breve')}
+      />
+
+      {/* Delete Message Dialog */}
+      <DeleteMessageDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, messageId: null })}
+        onDeleteForMe={() => {
+          if (deleteDialog.messageId) handleDeleteForMe(deleteDialog.messageId);
+          setDeleteDialog({ open: false, messageId: null });
+        }}
+        onDeleteForEveryone={() => {
+          if (deleteDialog.messageId) handleDeleteForEveryone(deleteDialog.messageId);
+          setDeleteDialog({ open: false, messageId: null });
+        }}
+        canDeleteForEveryone={true}
+      />
+
+      {/* Forward Message Dialog */}
+      <ForwardMessageDialog
+        open={forwardDialog.open}
+        onOpenChange={(open) => setForwardDialog({ open, messageId: null })}
+        conversations={conversations}
+        onForward={handleForwardMessage}
+        isLoading={loading}
+      />
+
+      {/* Edit Message Dialog */}
+      {editDialog.message && (
+        <EditMessageDialog
+          open={editDialog.open}
+          onOpenChange={(open) => setEditDialog({ open, message: null })}
+          message={editDialog.message.texto_da_mensagem}
+          onSave={(newMessage) => handleEditMessage(editDialog.message!.id, newMessage)}
+        />
+      )}
+
+      {/* Schedule Message Dialog */}
+      <ScheduleMessageDialog
+        open={scheduleDialog}
+        onOpenChange={setScheduleDialog}
+        message={newMessage}
+        onSchedule={handleScheduleMessage}
+      />
+
+      {/* Quick Reply Template Menu */}
+      {showTemplateMenu && company && (
+        <QuickReplyMenu
+          companyId={company.id}
+          searchQuery={newMessage}
+          position={templateMenuPosition}
+          onSelect={handleTemplateSelect}
+          onClose={() => setShowTemplateMenu(false)}
+        />
+      )}
+
+      {/* Assign Chat Dialog */}
+      {selectedConversation && user && company && (
+        <AssignChatDialog
+          open={assignDialog}
+          onOpenChange={setAssignDialog}
+          chatId={selectedConversation.id}
+          chatName={selectedConversation.nome_do_contato || selectedConversation.numero_de_telefone}
+          currentAssignedTo={selectedConversation.assigned_to}
+          companyId={company.id}
+          userId={user.id}
+          onSuccess={fetchConversations}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -19,14 +21,24 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // Fetch user AND company data in ONE optimized query (JOIN)
+  // 1. Pegar company_id do usuário
   const { data: userData } = await supabase
     .from('users')
-    .select('company_id, companies:company_id(vendagro_plan)')
+    .select('company_id')
     .eq('auth_user_id', user.id)
     .single();
 
-  const hasVendAgro = !!(userData?.companies as any)?.vendagro_plan;
+  // 2. Pegar dados da empresa DIRETO (igual admin faz)
+  const { data: companyData } = await supabase
+    .from('companies')
+    .select('*')
+    .eq('id', userData?.company_id || 0)
+    .single();
+
+  const companyName = companyData?.name;
+  const companyEmail = companyData?.email;
+  const companyImage = companyData?.image_url;
+  const hasVendAgro = !!companyData?.vendagro_plan;
 
   // Check if user is admin
   const { data: adminUser } = await supabase
@@ -40,7 +52,13 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar hasVendAgro={hasVendAgro} isAdmin={isAdmin} />
+      <Sidebar
+        hasVendAgro={hasVendAgro}
+        isAdmin={isAdmin}
+        companyName={companyName}
+        companyEmail={companyEmail}
+        companyImage={companyImage}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         <SystemTopBar />
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 pb-[120px] lg:pb-6 w-full">
