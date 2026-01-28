@@ -274,7 +274,8 @@ export default function PautaPage() {
         if (autoSubmit) {
           setTimeout(() => handleSubmit(), 300);
         } else {
-          setTimeout(nextStep, 300);
+          // Avança direto sem validação - o clique já é a seleção válida
+          setTimeout(() => setCurrentStep((prev) => prev + 1), 300);
         }
       }}
       className="w-full text-left p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-all flex items-center gap-4 group"
