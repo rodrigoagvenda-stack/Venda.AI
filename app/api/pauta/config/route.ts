@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar configuração
-    const { data, error } = await supabase.from('briefing_config').select('*').single();
+    const { data, error } = await supabase.from('pauta_config').select('*').single();
 
     if (error) throw error;
 
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       data: data || {},
     });
   } catch (error: any) {
-    console.error('Error fetching briefing config:', error);
+    console.error('Error fetching pauta config:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Erro ao buscar configuração' },
       { status: 500 }
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
 
     // Atualizar configuração
     const { data, error } = await supabase
-      .from('briefing_config')
+      .from('pauta_config')
       .update({
         webhook_url,
         webhook_secret,
@@ -87,11 +87,11 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Webhook configurado com sucesso!',
+      message: 'Webhook da pauta configurado com sucesso!',
       data,
     });
   } catch (error: any) {
-    console.error('Error updating briefing config:', error);
+    console.error('Error updating pauta config:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Erro ao atualizar configuração' },
       { status: 500 }
