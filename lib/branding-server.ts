@@ -25,8 +25,14 @@ export async function getServerBranding(): Promise<CompanyBranding> {
 
 /**
  * Gera CSS variables baseado no branding
+ * ISOLADO: Só gera quando há white label ativo (company_id > 0)
  */
 export function generateCSSVariables(branding: CompanyBranding): string {
+  // Se não tem white label (company_id = 0), não sobrescreve as cores padrão
+  if (branding.company_id === 0) {
+    return '';
+  }
+
   const vars: string[] = [];
 
   vars.push(`--primary: ${hexToHSL(branding.primary_color)}`);
