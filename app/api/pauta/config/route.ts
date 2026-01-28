@@ -2,71 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/server';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { id } = await params;
-    const supabase = await createClient();
-    const serviceClient = createServiceClient();
-
-    // Verificar autenticação
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 });
-    }
-
-    // Verificar se é admin usando serviceClient para bypass RLS
-    const { data: adminUser } = await serviceClient
-      .from('admin_users')
-      .select('*')
-      .eq('auth_user_id', user.id)
-      .eq('is_active', true)
-      .single();
-
-    if (!adminUser) {
-      return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
-    }
-
-    // Buscar resposta específica
-    const { data, error } = await serviceClient
-      .from('briefing_responses')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-
-    if (!data) {
-      return NextResponse.json(
-        { success: false, message: 'Resposta não encontrada' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error: any) {
-    console.error('Error fetching briefing response:', error);
-    return NextResponse.json(
-      { success: false, message: error.message || 'Erro ao buscar resposta' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
     const supabase = await createClient();
     const serviceClient = createServiceClient();
 
@@ -90,22 +27,76 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
     }
 
-    // Deletar briefing
-    const { error } = await serviceClient
-      .from('briefing_responses')
-      .delete()
-      .eq('id', id);
+    // Buscar configuração
+    const { data, error } = await serviceClient.from('pauta_config').select('*').single();
 
     if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      message: 'Briefing excluído com sucesso',
+      data: data || {},
     });
   } catch (error: any) {
-    console.error('Error deleting briefing:', error);
+    console.error('Error fetching pauta config:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Erro ao excluir briefing' },
+      { success: false, message: error.message || 'Erro ao buscar configuração' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    const serviceClient = createServiceClient();
+
+    // Verificar autenticação admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 });
+    }
+
+    const { data: adminUser } = await serviceClient
+      .from('admin_users')
+      .select('*')
+      .eq('auth_user_id', user.id)
+      .eq('is_active', true)
+      .single();
+
+    if (!adminUser) {
+      return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { webhook_url, webhook_secret, is_active } = body;
+
+    // Atualizar configuração
+    const { data, error } = await serviceClient
+      .from('pauta_config')
+      .update({
+        webhook_url,
+        webhook_secret,
+        is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', 1)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      message: 'Webhook de pauta configurado com sucesso!',
+      data,
+    });
+  } catch (error: any) {
+    console.error('Error updating pauta config:', error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Erro ao atualizar configuração' },
       { status: 500 }
     );
   }
