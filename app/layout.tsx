@@ -5,6 +5,11 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "vend.AI - CRM Inteligente com IA",
   description: "Sistema completo de CRM com automação e inteligência artificial",
+  icons: {
+    icon: 'https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Fivecon-vendai.png',
+    shortcut: 'https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Fivecon-vendai.png',
+    apple: 'https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Fivecon-vendai.png',
+  },
 };
 
 export default function RootLayout({
