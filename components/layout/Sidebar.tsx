@@ -108,14 +108,14 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-card border-r border-border transition-all duration-300',
+          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-white border-r border-gray-200 transition-all duration-300',
           isCollapsed ? 'md:w-20' : 'md:w-72'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center h-20 px-6 border-b border-border/50">
+        <div className="flex items-center h-20 px-6 border-b border-gray-100">
           {!isCollapsed && (
-            <h1 className="text-2xl">
+            <h1 className="text-2xl text-gray-900">
               <span className="font-normal">vend</span>
               <span className="text-primary font-bold">.</span>
               <span className="font-bold">AI</span>
@@ -126,7 +126,7 @@ export function Sidebar({
         {/* Menu Label */}
         {!isCollapsed && (
           <div className="px-6 pt-6 pb-3">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
               Menu
             </span>
           </div>
@@ -145,8 +145,8 @@ export function Sidebar({
                 className={cn(
                   'group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'text-muted-foreground hover:bg-accent/50',
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-gray-600 hover:bg-gray-100',
                   isCollapsed && 'justify-center px-2'
                 )}
                 title={isCollapsed ? link.label : undefined}
@@ -155,8 +155,8 @@ export function Sidebar({
                   className={cn(
                     'flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
                     isActive
-                      ? 'bg-primary-foreground/20'
-                      : 'bg-muted/50 group-hover:bg-muted'
+                      ? 'bg-white/20'
+                      : 'bg-gray-100 group-hover:bg-gray-200'
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -177,10 +177,10 @@ export function Sidebar({
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-gray-100">
           <div
             className={cn(
-              'flex items-center gap-3 px-3 py-3 rounded-xl bg-accent/30',
+              'flex items-center gap-3 px-3 py-3 rounded-xl bg-gray-50',
               isCollapsed && 'justify-center px-2'
             )}
           >
@@ -191,8 +191,8 @@ export function Sidebar({
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{userName || 'Usuário'}</p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">{userName || 'Usuário'}</p>
+                <p className="text-xs text-gray-500 truncate">
                   {userEmail || 'user@vend.ai'}
                 </p>
               </div>
@@ -207,7 +207,7 @@ export function Sidebar({
               onClick={handleLogout}
               disabled={isLoggingOut}
               className={cn(
-                'flex-1 justify-start text-muted-foreground hover:text-foreground',
+                'flex-1 justify-start text-gray-500 hover:text-gray-900',
                 isCollapsed && 'justify-center px-2'
               )}
               size={isCollapsed ? 'icon' : 'default'}
