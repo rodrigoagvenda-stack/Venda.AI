@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Users,
@@ -108,7 +108,7 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-card border-r border-border transition-all duration-300',
+          'hidden md:fixed md:inset-y-0 md:left-0 md:z-50 md:flex md:flex-col bg-card border-r border-border transition-all duration-300',
           isCollapsed ? 'md:w-20' : 'md:w-72'
         )}
       >
@@ -234,8 +234,8 @@ export function Sidebar({
         </div>
       </aside>
 
-      {/* Spacer for content */}
-      <div className={cn('hidden md:block', isCollapsed ? 'md:w-20' : 'md:w-72')} />
+      {/* Spacer for content — must mirror sidebar width + transition */}
+      <div className={cn('hidden md:block shrink-0 transition-all duration-300', isCollapsed ? 'md:w-20' : 'md:w-72')} />
     </>
   );
 }

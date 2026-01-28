@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   // Fetch user AND company data in ONE optimized query (JOIN)
   const { data: userData } = await supabase
     .from('users')
-    .select('company_id, companies:company_id(vendagro_plan)')
+    .select('name, email, company_id, companies:company_id(vendagro_plan)')
     .eq('auth_user_id', user.id)
     .single();
 
@@ -40,7 +40,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar hasVendAgro={hasVendAgro} isAdmin={isAdmin} />
+      <Sidebar hasVendAgro={hasVendAgro} isAdmin={isAdmin} userName={userData?.name} userEmail={userData?.email} />
       <div className="flex-1 flex flex-col min-w-0">
         <SystemTopBar />
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6 pb-[120px] lg:pb-6 w-full">
