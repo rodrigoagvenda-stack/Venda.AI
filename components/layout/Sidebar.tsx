@@ -28,6 +28,7 @@ interface SidebarProps {
   isAdmin?: boolean;
   userName?: string;
   userEmail?: string;
+  companyName?: string;
 }
 
 export function Sidebar({
@@ -35,6 +36,7 @@ export function Sidebar({
   isAdmin = false,
   userName,
   userEmail,
+  companyName,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -115,10 +117,14 @@ export function Sidebar({
         {/* Logo */}
         <div className="flex items-center h-20 px-6 border-b border-border/50">
           {!isCollapsed && (
-            <h1 className="text-2xl">
-              <span className="font-normal">vend</span>
-              <span className="text-primary font-bold">.</span>
-              <span className="font-bold">AI</span>
+            <h1 className="text-2xl font-bold truncate">
+              {companyName || (
+                <>
+                  <span className="font-normal">vend</span>
+                  <span className="text-primary font-bold">.</span>
+                  <span className="font-bold">AI</span>
+                </>
+              )}
             </h1>
           )}
         </div>
