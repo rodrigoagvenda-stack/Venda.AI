@@ -164,22 +164,22 @@ export default function PautaPage() {
   // Welcome Screen
   if (currentStep === -1) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full text-center space-y-8 animate-in fade-in duration-500">
-          <div className="flex justify-center mb-8">
-            <h1 className="text-3xl font-semibold">
+      <div className="min-h-screen bg-background flex items-center justify-center px-6 py-8 font-[Roboto,sans-serif]">
+        <div className="max-w-xl w-full text-center space-y-6 animate-in fade-in duration-500">
+          <div className="flex justify-center mb-6">
+            <h1 className="text-2xl font-medium tracking-tight">
               vend<span className="text-primary">.</span>AI
             </h1>
           </div>
-          <h1 className="text-4xl md:text-5xl font-semibold">
+          <h1 className="text-2xl md:text-4xl font-normal">
             Nova Pauta
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-md mx-auto">
             Preencha as informações da pauta para o time de execução
           </p>
-          <Button size="lg" onClick={nextStep} className="text-base px-8 py-6">
+          <Button size="default" onClick={nextStep} className="text-sm px-6 py-5">
             Começar
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -189,17 +189,17 @@ export default function PautaPage() {
   // Thank You Screen
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full text-center space-y-8 animate-in fade-in duration-500">
-          <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Check className="h-10 w-10 text-primary" />
+      <div className="min-h-screen bg-background flex items-center justify-center px-6 py-8 font-[Roboto,sans-serif]">
+        <div className="max-w-xl w-full text-center space-y-6 animate-in fade-in duration-500">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Check className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-semibold">
+          <h1 className="text-2xl md:text-4xl font-normal">
             Pauta Enviada!
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-md mx-auto">
             Sua pauta foi registrada com sucesso. O time de execução será notificado.
           </p>
           <Button
@@ -216,10 +216,10 @@ export default function PautaPage() {
                 metricas: [],
               });
             }}
-            className="text-base px-8 py-6"
+            className="text-sm px-6 py-5"
           >
             Criar Nova Pauta
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -240,22 +240,22 @@ export default function PautaPage() {
   }) => (
     <button
       onClick={onClick}
-      className={`w-full text-left p-4 rounded-lg border-2 transition-all flex items-center gap-4 group ${
+      className={`w-full text-left p-3 rounded-lg border transition-all flex items-center gap-3 group ${
         selected
           ? 'border-primary bg-primary/10'
-          : 'border-border hover:border-primary hover:bg-accent'
+          : 'border-border hover:border-primary/50 hover:bg-accent/50'
       }`}
     >
       <div
-        className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-semibold ${
+        className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-sm font-medium ${
           selected
             ? 'bg-primary text-primary-foreground'
-            : 'bg-muted group-hover:bg-primary group-hover:text-primary-foreground'
+            : 'bg-muted group-hover:bg-primary/80 group-hover:text-primary-foreground'
         }`}
       >
-        {selected ? <Check className="h-5 w-5" /> : String.fromCharCode(65 + index)}
+        {selected ? <Check className="h-4 w-4" /> : String.fromCharCode(65 + index)}
       </div>
-      <span className="text-lg">{label}</span>
+      <span className="text-sm">{label}</span>
     </button>
   );
 
@@ -279,18 +279,17 @@ export default function PautaPage() {
         if (autoSubmit) {
           setTimeout(() => handleSubmit(), 300);
         } else {
-          // Avança direto sem validação - o clique já é a seleção válida
           setTimeout(() => setCurrentStep((prev) => prev + 1), 300);
         }
       }}
-      className="w-full text-left p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-all flex items-center gap-4 group"
+      className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-accent/50 transition-all flex items-center gap-3 group"
       disabled={isSubmitting}
     >
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center font-semibold">
+      <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted group-hover:bg-primary/80 group-hover:text-primary-foreground flex items-center justify-center text-sm font-medium">
         {String.fromCharCode(65 + index)}
       </div>
-      <span className="text-lg">{label}</span>
-      {isSubmitting && <Loader2 className="ml-auto h-5 w-5 animate-spin" />}
+      <span className="text-sm">{label}</span>
+      {isSubmitting && <Loader2 className="ml-auto h-4 w-4 animate-spin" />}
     </button>
   );
 
@@ -299,8 +298,8 @@ export default function PautaPage() {
     // Step 0: Select tipo_pauta
     if (currentStep === 0) {
       return (
-        <div className="space-y-6">
-          <h2 className="text-3xl md:text-4xl font-medium">
+        <div className="space-y-4">
+          <h2 className="text-xl md:text-2xl font-normal">
             Qual é o tipo da pauta?
           </h2>
           <div className="space-y-3">
@@ -326,46 +325,46 @@ export default function PautaPage() {
       switch (currentStep) {
         case 1:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual é o nome do CS responsável?
               </h2>
               <Input
                 value={formData.nome_cs}
                 onChange={(e) => updateField('nome_cs', e.target.value)}
                 placeholder="Digite o nome do CS..."
-                className="text-xl h-14 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="lg" onClick={nextStep} disabled={!formData.nome_cs}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 2:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual é o nome do cliente/empresa?
               </h2>
               <Input
                 value={formData.nome_cliente}
                 onChange={(e) => updateField('nome_cliente', e.target.value)}
                 placeholder="Digite o nome do cliente..."
-                className="text-xl h-14 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="lg" onClick={nextStep} disabled={!formData.nome_cliente}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 3:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual é o objetivo principal da pauta?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de um</p>
@@ -380,16 +379,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.objetivos.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 4:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Quais plataformas serão trabalhadas?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de uma</p>
@@ -404,16 +403,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.plataformas.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 5:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual a quantidade de posts solicitada?
               </h2>
               <div className="space-y-3">
@@ -432,8 +431,8 @@ export default function PautaPage() {
 
         case 6:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Quais formatos de conteúdo serão produzidos?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de um</p>
@@ -448,16 +447,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.formatos_conteudo.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.formatos_conteudo.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 7:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 O conteúdo precisa de copy (texto)?
               </h2>
               <div className="space-y-3">
@@ -469,8 +468,8 @@ export default function PautaPage() {
 
         case 8:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 O post precisa de descrição/legenda?
               </h2>
               <div className="space-y-3">
@@ -482,8 +481,8 @@ export default function PautaPage() {
 
         case 9:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Observações importantes do CS
               </h2>
               <p className="text-muted-foreground">Opcional - pressione OK para finalizar</p>
@@ -491,18 +490,18 @@ export default function PautaPage() {
                 value={formData.observacoes || ''}
                 onChange={(e) => updateField('observacoes', e.target.value)}
                 placeholder="Digite suas observações..."
-                className="text-lg min-h-[120px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
+                className="text-sm min-h-[100px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
                 autoFocus
               />
-              <Button size="lg" onClick={handleSubmit} disabled={isSubmitting}>
+              <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
                   </>
                 ) : (
                   <>
-                    Enviar Pauta <ArrowRight className="ml-2 h-5 w-5" />
+                    Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
@@ -516,27 +515,27 @@ export default function PautaPage() {
       switch (currentStep) {
         case 1:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Nome do cliente
               </h2>
               <Input
                 value={formData.nome_cliente}
                 onChange={(e) => updateField('nome_cliente', e.target.value)}
                 placeholder="Digite o nome do cliente..."
-                className="text-xl h-14 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="lg" onClick={nextStep} disabled={!formData.nome_cliente}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 2:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 CS responsável
               </h2>
               <p className="text-muted-foreground">Ex: Rodrigo, Ana, João</p>
@@ -544,19 +543,19 @@ export default function PautaPage() {
                 value={formData.nome_cs}
                 onChange={(e) => updateField('nome_cs', e.target.value)}
                 placeholder="Digite o nome do CS..."
-                className="text-xl h-14 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="lg" onClick={nextStep} disabled={!formData.nome_cs}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 3:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual é o objetivo da pauta?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de um</p>
@@ -571,16 +570,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.objetivos.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 4:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Plataforma envolvida
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de uma</p>
@@ -595,16 +594,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.plataformas.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 5:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Quais métricas serão analisadas?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de uma</p>
@@ -619,16 +618,16 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="lg" onClick={nextStep} disabled={formData.metricas.length === 0}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep} disabled={formData.metricas.length === 0}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 6:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Existe alguma campanha, produto ou funil específico?
               </h2>
               <p className="text-muted-foreground">Opcional - pressione OK para pular</p>
@@ -636,19 +635,19 @@ export default function PautaPage() {
                 value={formData.campanha_especifica || ''}
                 onChange={(e) => updateField('campanha_especifica', e.target.value)}
                 placeholder="Descreva a campanha..."
-                className="text-xl h-14 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
+                className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="lg" onClick={nextStep}>
-                OK <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="default" onClick={nextStep}>
+                OK <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           );
 
         case 7:
           return (
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-medium">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Observações importantes do CS
               </h2>
               <p className="text-muted-foreground">Opcional - pressione OK para finalizar</p>
@@ -656,18 +655,18 @@ export default function PautaPage() {
                 value={formData.observacoes || ''}
                 onChange={(e) => updateField('observacoes', e.target.value)}
                 placeholder="Digite suas observações..."
-                className="text-lg min-h-[120px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
+                className="text-sm min-h-[100px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
                 autoFocus
               />
-              <Button size="lg" onClick={handleSubmit} disabled={isSubmitting}>
+              <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Enviando...
                   </>
                 ) : (
                   <>
-                    Enviar Pauta <ArrowRight className="ml-2 h-5 w-5" />
+                    Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
               </Button>
@@ -681,10 +680,10 @@ export default function PautaPage() {
 
   // Question Screens
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-[Roboto,sans-serif]">
       {/* Fixed Logo */}
-      <div className="fixed top-6 left-6 z-50">
-        <h1 className="text-2xl font-bold">
+      <div className="fixed top-4 left-4 md:top-6 md:left-6 z-50">
+        <h1 className="text-xl font-medium">
           vend<span className="text-primary">.</span>AI
         </h1>
       </div>
@@ -698,11 +697,11 @@ export default function PautaPage() {
       </div>
 
       {/* Question Content */}
-      <div className="flex items-center justify-center min-h-screen p-4 pt-20">
-        <div className="max-w-2xl w-full animate-in fade-in duration-300" onKeyPress={handleKeyPress}>
+      <div className="flex items-center justify-center min-h-screen px-6 py-8 pt-16">
+        <div className="max-w-lg w-full animate-in fade-in duration-300" onKeyPress={handleKeyPress}>
           {/* Question Number */}
-          <div className="mb-4">
-            <span className="text-sm text-muted-foreground">
+          <div className="mb-3">
+            <span className="text-xs text-muted-foreground">
               {currentStep + 1} → {totalSteps}
             </span>
           </div>
