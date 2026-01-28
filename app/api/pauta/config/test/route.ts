@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const serviceClient = createServiceClient();
 
     // Verificar autenticação admin
     const {
@@ -16,10 +14,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Não autorizado' }, { status: 401 });
     }
 
-    const { data: adminUser } = await serviceClient
+    const { data: adminUser } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('auth_user_id', user.id)
+      .eq('user_id', user.id)
       .eq('is_active', true)
       .single();
 
@@ -28,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar configuração
-    const { data: config, error: configError } = await serviceClient
+    const { data: config, error: configError } = await supabase
       .from('pauta_config')
       .select('webhook_url, webhook_secret')
       .single();
@@ -62,11 +60,11 @@ export async function POST(request: NextRequest) {
         testStatus = 'success';
       }
     } catch (error) {
-      console.error('Webhook test failed:', error);
+      console.error('Pauta webhook test failed:', error);
     }
 
     // Salvar resultado
-    await serviceClient
+    await supabase
       .from('pauta_config')
       .update({
         last_test_at: new Date().toISOString(),
