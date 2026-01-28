@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { useBranding } from '@/components/providers/BrandingProvider';
+import { DEFAULT_BRANDING } from '@/types/branding';
 
 interface LogoProps {
   className?: string;
@@ -9,11 +11,8 @@ interface LogoProps {
   height?: number;
 }
 
-// URLs das logos no Supabase
-const LOGO_WHITE = 'https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Logo-Venda-Ai-transparente-branco.png';
-const LOGO_BLACK = 'https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Logo-Venda-Ai-transparente-branco.png';
-
 export function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
+  const branding = useBranding();
   const [isDark, setIsDark] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -42,13 +41,17 @@ export function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
     return () => observer.disconnect();
   }, []);
 
+  // URLs do branding
+  const logoWhite = branding.logo_url || DEFAULT_BRANDING.logo_url!;
+  const logoBlack = branding.logo_url_light || branding.logo_url || DEFAULT_BRANDING.logo_url_light!;
+
   // Antes de montar, mostra a logo branca (dark mode é o padrão)
   if (!mounted) {
     return (
       <div className={className}>
         <Image
-          src={LOGO_WHITE}
-          alt="vend.AI"
+          src={logoWhite}
+          alt={branding.app_name}
           width={width}
           height={height}
           className="object-contain"
@@ -58,13 +61,13 @@ export function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
     );
   }
 
-  const logoSrc = isDark ? LOGO_WHITE : LOGO_BLACK;
+  const logoSrc = isDark ? logoWhite : logoBlack;
 
   return (
     <div className={className}>
       <Image
         src={logoSrc}
-        alt="vend.AI"
+        alt={branding.app_name}
         width={width}
         height={height}
         className="object-contain"
@@ -74,13 +77,16 @@ export function Logo({ className = '', width = 120, height = 40 }: LogoProps) {
   );
 }
 
-// Logo simples sem detecção de tema (para usar em fundos específicos)
+// Logo simples sem detecção de tema (para usar em fundos escuros)
 export function LogoWhite({ className = '', width = 120, height = 40 }: LogoProps) {
+  const branding = useBranding();
+  const logoUrl = branding.logo_url || DEFAULT_BRANDING.logo_url!;
+
   return (
     <div className={className}>
       <Image
-        src={LOGO_WHITE}
-        alt="vend.AI"
+        src={logoUrl}
+        alt={branding.app_name}
         width={width}
         height={height}
         className="object-contain"
@@ -90,12 +96,16 @@ export function LogoWhite({ className = '', width = 120, height = 40 }: LogoProp
   );
 }
 
+// Logo para fundos claros
 export function LogoBlack({ className = '', width = 120, height = 40 }: LogoProps) {
+  const branding = useBranding();
+  const logoUrl = branding.logo_url_light || branding.logo_url || DEFAULT_BRANDING.logo_url_light!;
+
   return (
     <div className={className}>
       <Image
-        src={LOGO_BLACK}
-        alt="vend.AI"
+        src={logoUrl}
+        alt={branding.app_name}
         width={width}
         height={height}
         className="object-contain"

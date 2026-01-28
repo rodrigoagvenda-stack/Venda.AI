@@ -10,9 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Loader2, Shield, User } from 'lucide-react';
 import { OrbEffect } from '@/components/auth/OrbEffect';
+import { LogoWhite } from '@/components/Logo';
+import { useBranding } from '@/components/providers/BrandingProvider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const branding = useBranding();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,10 +78,8 @@ export default function LoginPage() {
             <div className="flex justify-center mb-2">
               <div className="w-16 h-1 bg-primary rounded-full" />
             </div>
-            <CardTitle className="text-5xl text-white">
-              <span className="font-semibold">vend</span>
-              <span className="text-primary font-semibold">.</span>
-              <span className="font-normal">AI</span>
+            <CardTitle className="flex justify-center">
+              <LogoWhite width={180} height={60} />
             </CardTitle>
             <CardDescription className="text-white/80 text-base leading-relaxed">
               Quem já queimou os barcos 🔥<br />
