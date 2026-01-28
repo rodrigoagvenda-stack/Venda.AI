@@ -14,6 +14,7 @@ import {
   SOCIAL_MEDIA_FORMATOS,
   TRAFEGO_OBJETIVOS,
   TRAFEGO_PLATAFORMAS,
+  TRAFEGO_METRICAS,
 } from '@/types/pauta';
 
 interface FormData {
@@ -26,6 +27,7 @@ interface FormData {
   formatos_conteudo: string[];
   precisa_copy?: 'sim' | 'nao';
   precisa_legenda?: 'sim' | 'nao';
+  metricas: string[];
   campanha_especifica?: string;
   observacoes?: string;
 }
@@ -41,13 +43,14 @@ export default function PautaPage() {
     objetivos: [],
     plataformas: [],
     formatos_conteudo: [],
+    metricas: [],
   });
 
   // Define steps based on tipo_pauta
   const getTotalSteps = () => {
     if (!formData.tipo_pauta) return 1; // Just the tipo selection
     if (formData.tipo_pauta === 'social_media') return 10; // tipo + 9 questions
-    return 7; // tipo + 6 questions for trafego
+    return 8; // tipo + 7 questions for trafego (inclui métricas)
   };
 
   const totalSteps = getTotalSteps();
@@ -57,7 +60,7 @@ export default function PautaPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayField = (field: 'objetivos' | 'plataformas' | 'formatos_conteudo', value: string) => {
+  const toggleArrayField = (field: 'objetivos' | 'plataformas' | 'formatos_conteudo' | 'metricas', value: string) => {
     setFormData((prev) => {
       const currentArray = prev[field] || [];
       if (currentArray.includes(value)) {
@@ -94,8 +97,9 @@ export default function PautaPage() {
         case 2: return !!formData.nome_cs;
         case 3: return formData.objetivos.length > 0;
         case 4: return formData.plataformas.length > 0;
-        case 5: return true; // campanha_especifica is optional
-        case 6: return true; // observacoes is optional
+        case 5: return formData.metricas.length > 0; // métricas obrigatório
+        case 6: return true; // campanha_especifica is optional
+        case 7: return true; // observacoes is optional
         default: return true;
       }
     }
@@ -209,6 +213,7 @@ export default function PautaPage() {
                 objetivos: [],
                 plataformas: [],
                 formatos_conteudo: [],
+                metricas: [],
               });
             }}
             className="text-base px-8 py-6"
@@ -600,6 +605,30 @@ export default function PautaPage() {
           return (
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl font-medium">
+                Quais métricas serão analisadas?
+              </h2>
+              <p className="text-muted-foreground">Pode marcar mais de uma</p>
+              <div className="space-y-3">
+                {TRAFEGO_METRICAS.map((metrica, index) => (
+                  <MultiChoiceButton
+                    key={metrica}
+                    label={metrica}
+                    selected={formData.metricas.includes(metrica)}
+                    onClick={() => toggleArrayField('metricas', metrica)}
+                    index={index}
+                  />
+                ))}
+              </div>
+              <Button size="lg" onClick={nextStep} disabled={formData.metricas.length === 0}>
+                OK <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          );
+
+        case 6:
+          return (
+            <div className="space-y-6">
+              <h2 className="text-3xl md:text-4xl font-medium">
                 Existe alguma campanha, produto ou funil específico?
               </h2>
               <p className="text-muted-foreground">Opcional - pressione OK para pular</p>
@@ -616,7 +645,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 6:
+        case 7:
           return (
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl font-medium">

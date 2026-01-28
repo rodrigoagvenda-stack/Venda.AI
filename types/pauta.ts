@@ -21,6 +21,7 @@ export interface PautaTrafegoFormData {
   nome_cs: string;
   objetivos: string[]; // múltipla escolha
   plataformas: string[]; // múltipla escolha
+  metricas: string[]; // métricas a serem usadas na pauta
   campanha_especifica?: string;
   observacoes?: string;
 }
@@ -42,6 +43,7 @@ export interface PautaResponse {
   precisa_copy?: 'sim' | 'nao';
   precisa_legenda?: 'sim' | 'nao';
   // Tráfego specific
+  metricas?: string[];
   campanha_especifica?: string;
   // Common
   observacoes?: string;
@@ -110,4 +112,17 @@ export const TRAFEGO_PLATAFORMAS = [
   'Google Ads',
   'TikTok Ads',
   'Mais de uma',
+] as const;
+
+export const TRAFEGO_METRICAS = [
+  'CPA (Custo por Aquisição)',
+  'CPL (Custo por Lead)',
+  'CPC (Custo por Clique)',
+  'CPM (Custo por Mil)',
+  'CTR (Taxa de Cliques)',
+  'ROAS (Retorno sobre Investimento)',
+  'Conversões',
+  'Impressões',
+  'Alcance',
+  'Frequência',
 ] as const;

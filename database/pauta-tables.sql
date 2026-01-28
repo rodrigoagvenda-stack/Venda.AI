@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS pauta_responses (
   precisa_legenda TEXT, -- 'sim', 'nao'
 
   -- Campos específicos de Tráfego
+  metricas TEXT[], -- array: 'CPA', 'CPL', 'CPC', 'CPM', 'CTR', 'ROAS', etc.
   campanha_especifica TEXT,
 
   -- Meta

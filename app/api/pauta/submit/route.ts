@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       precisa_copy: formData.precisa_copy || null,
       precisa_legenda: formData.precisa_legenda || null,
       // Tráfego specific
+      metricas: formData.metricas || null,
       campanha_especifica: formData.campanha_especifica || null,
     };
 
