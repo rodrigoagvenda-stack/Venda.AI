@@ -22,6 +22,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LogoWhite } from '@/components/Logo';
 
 interface SidebarProps {
   hasVendAgro?: boolean;
@@ -115,14 +116,8 @@ export function Sidebar({
         )}
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-6">
-          {!isCollapsed && (
-            <h1 className="text-xl">
-              <span className="font-normal text-white">vend</span>
-              <span className="text-primary font-bold">.</span>
-              <span className="font-bold text-white">AI</span>
-            </h1>
-          )}
+        <div className="flex items-center h-16 px-4">
+          {!isCollapsed && <LogoWhite width={100} height={36} />}
         </div>
 
         {/* Navigation */}

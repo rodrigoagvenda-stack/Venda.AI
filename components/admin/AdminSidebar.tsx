@@ -23,6 +23,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Logo } from '@/components/Logo';
 
 interface AdminSidebarProps {
   adminName?: string;
@@ -96,14 +97,8 @@ export function AdminSidebar({ adminName, adminEmail }: AdminSidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="flex items-center h-20 px-6 border-b border-border/50">
-          {!isCollapsed && (
-            <h1 className="text-2xl">
-              <span className="font-normal">vend</span>
-              <span className="text-primary font-bold">.</span>
-              <span className="font-bold">AI</span>
-            </h1>
-          )}
+        <div className="flex items-center h-20 px-4 border-b border-border/50">
+          {!isCollapsed && <Logo width={100} height={36} />}
         </div>
 
         {/* Menu Label */}

@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { BriefingFormData } from '@/types/briefing';
+import { Logo } from '@/components/Logo';
 
 export default function BriefPage() {
   const [currentStep, setCurrentStep] = useState(-1); // -1 = welcome screen
@@ -136,9 +137,7 @@ export default function BriefPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-2xl w-full text-center space-y-8 animate-in fade-in duration-500">
           <div className="flex justify-center mb-8">
-            <h1 className="text-3xl font-semibold">
-              vend<span className="text-primary">.</span>AI
-            </h1>
+            <Logo width={140} height={50} />
           </div>
           <h1 className="text-4xl md:text-5xl font-semibold">
             Bem-vindo ao Briefing
@@ -186,9 +185,7 @@ export default function BriefPage() {
     <div className="min-h-screen bg-background">
       {/* Fixed Logo */}
       <div className="fixed top-6 left-6 z-50">
-        <h1 className="text-2xl font-bold">
-          vend<span className="text-primary">.</span>AI
-        </h1>
+        <Logo width={100} height={36} />
       </div>
 
       {/* Progress Bar */}

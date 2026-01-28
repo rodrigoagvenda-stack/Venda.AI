@@ -16,6 +16,7 @@ import {
   TRAFEGO_PLATAFORMAS,
   TRAFEGO_METRICAS,
 } from '@/types/pauta';
+import { Logo } from '@/components/Logo';
 
 interface FormData {
   tipo_pauta?: TipoPauta;
@@ -167,9 +168,7 @@ export default function PautaPage() {
       <div className="min-h-screen bg-background flex items-center justify-center px-6 py-8 font-[Roboto,sans-serif]">
         <div className="max-w-xl w-full text-center space-y-6 animate-in fade-in duration-500">
           <div className="flex justify-center mb-6">
-            <h1 className="text-2xl font-medium tracking-tight">
-              vend<span className="text-primary">.</span>AI
-            </h1>
+            <Logo width={120} height={44} />
           </div>
           <h1 className="text-2xl md:text-4xl font-normal">
             Nova Pauta
@@ -683,9 +682,7 @@ export default function PautaPage() {
     <div className="min-h-screen bg-background font-[Roboto,sans-serif]">
       {/* Fixed Logo */}
       <div className="fixed top-4 left-4 md:top-6 md:left-6 z-50">
-        <h1 className="text-xl font-medium">
-          vend<span className="text-primary">.</span>AI
-        </h1>
+        <Logo width={100} height={36} />
       </div>
 
       {/* Progress Bar */}
