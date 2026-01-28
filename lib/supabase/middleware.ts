@@ -2,11 +2,21 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  // Extrair o host para white label
+  const host = request.headers.get('host') || '';
+
+  // Criar headers modificados com o host
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-host', host);
+
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   })
+
+  // Passar o host como header na response também
+  response.headers.set('x-host', host);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

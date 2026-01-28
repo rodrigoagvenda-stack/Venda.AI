@@ -22,6 +22,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useBranding } from '@/lib/hooks/useBranding';
+import Image from 'next/image';
 
 interface SidebarProps {
   hasVendAgro?: boolean;
@@ -40,6 +42,7 @@ export function Sidebar({
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { branding } = useBranding();
 
   const links = [
     {
@@ -115,11 +118,21 @@ export function Sidebar({
         {/* Logo */}
         <div className="flex items-center h-20 px-6 border-b border-border/50">
           {!isCollapsed && (
-            <h1 className="text-2xl">
-              <span className="font-normal">vend</span>
-              <span className="text-primary font-bold">.</span>
-              <span className="font-bold">AI</span>
-            </h1>
+            branding.logo_url ? (
+              <Image
+                src={branding.logo_url}
+                alt={branding.app_name}
+                width={140}
+                height={40}
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <h1 className="text-2xl">
+                <span className="font-normal">vend</span>
+                <span className="text-primary font-bold">.</span>
+                <span className="font-bold">AI</span>
+              </h1>
+            )
           )}
         </div>
 

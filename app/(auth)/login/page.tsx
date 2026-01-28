@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Loader2, Shield, User } from 'lucide-react';
 import { OrbEffect } from '@/components/auth/OrbEffect';
+import { useBranding } from '@/lib/hooks/useBranding';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<'user' | 'admin'>('user');
+  const { branding } = useBranding();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +78,29 @@ export default function LoginPage() {
             <div className="flex justify-center mb-2">
               <div className="w-16 h-1 bg-primary rounded-full" />
             </div>
-            <CardTitle className="text-5xl text-white">
-              <span className="font-semibold">vend</span>
-              <span className="text-primary font-semibold">.</span>
-              <span className="font-normal">AI</span>
-            </CardTitle>
+            {branding.logo_url_light || branding.logo_url ? (
+              <div className="flex justify-center">
+                <Image
+                  src={branding.logo_url_light || branding.logo_url || ''}
+                  alt={branding.app_name}
+                  width={200}
+                  height={60}
+                  className="h-14 w-auto object-contain"
+                />
+              </div>
+            ) : (
+              <CardTitle className="text-5xl text-white">
+                <span className="font-semibold">vend</span>
+                <span className="text-primary font-semibold">.</span>
+                <span className="font-normal">AI</span>
+              </CardTitle>
+            )}
             <CardDescription className="text-white/80 text-base leading-relaxed">
-              Quem já queimou os barcos 🔥<br />
-              entra por aqui.
+              {branding.company_id ? (
+                <>Bem-vindo ao {branding.app_name}</>
+              ) : (
+                <>Quem já queimou os barcos 🔥<br />entra por aqui.</>
+              )}
             </CardDescription>
 
             {/* Toggle Admin/Usuário */}

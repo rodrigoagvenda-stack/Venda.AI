@@ -7,6 +7,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'dkvznmmiiiljyrkopiqx.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
     ],
   },
   // Configuração para subdomínios
