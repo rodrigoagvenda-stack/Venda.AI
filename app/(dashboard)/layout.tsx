@@ -21,12 +21,30 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // 1. Pegar company_id do usuário
-  const { data: userData } = await supabase
+  // 1. Pegar company_id do usuário (por auth_user_id ou email como fallback)
+  let { data: userData } = await supabase
     .from('users')
-    .select('company_id')
+    .select('company_id, id')
     .eq('auth_user_id', user.id)
     .single();
+
+  // Fallback: buscar por email se auth_user_id não bateu
+  if (!userData && user.email) {
+    const { data: userByEmail } = await supabase
+      .from('users')
+      .select('company_id, id')
+      .eq('email', user.email)
+      .single();
+
+    if (userByEmail) {
+      userData = userByEmail;
+      // Atualizar auth_user_id para próximas consultas
+      await supabase
+        .from('users')
+        .update({ auth_user_id: user.id })
+        .eq('id', userByEmail.id);
+    }
+  }
 
   // 2. Pegar dados da empresa DIRETO (igual admin faz)
   const { data: companyData } = await supabase

@@ -16,7 +16,7 @@ export function useUser() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserAndCompany(session.user.id);
+        fetchUserAndCompany(session.user.id, session.user.email);
       } else {
         setLoading(false);
       }
@@ -28,7 +28,7 @@ export function useUser() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserAndCompany(session.user.id);
+        fetchUserAndCompany(session.user.id, session.user.email);
       } else {
         setUser(null);
         setCompany(null);
@@ -39,29 +39,41 @@ export function useUser() {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function fetchUserAndCompany(authUserId: string) {
+  async function fetchUserAndCompany(authUserId: string, authEmail?: string) {
     const supabase = createClient();
 
     try {
-      // Primeiro, buscar o usuário
-      const { data: userData, error: userError } = await supabase
+      // Primeiro, buscar o usuário por auth_user_id
+      let { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('auth_user_id', authUserId)
         .single();
 
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        throw userError;
+      // Fallback: buscar por email se auth_user_id não bateu
+      if ((userError || !userData) && authEmail) {
+        const { data: userByEmail } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', authEmail)
+          .single();
+
+        if (userByEmail) {
+          userData = userByEmail;
+          // Atualizar auth_user_id para próximas consultas
+          await supabase
+            .from('users')
+            .update({ auth_user_id: authUserId })
+            .eq('id', userByEmail.id);
+        }
       }
 
       if (!userData) {
-        console.warn('User not found for auth_user_id:', authUserId);
+        console.warn('User not found for auth_user_id or email:', authUserId, authEmail);
         setLoading(false);
         return;
       }
 
-      console.log('✅ User found:', userData);
       setUser(userData);
 
       // Se tem company_id, buscar a empresa

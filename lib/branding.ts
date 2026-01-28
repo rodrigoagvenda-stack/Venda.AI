@@ -40,6 +40,17 @@ export async function getCompanyIdByDomain(domain: string): Promise<number | nul
       data = result.data;
     }
 
+    // Fallback: busca por domínio contido na URL (caso salvo como https://domain/path)
+    if (!data) {
+      const result = await supabase
+        .from('company_domains')
+        .select('company_id')
+        .ilike('domain', `%${cleanDomain}%`)
+        .limit(1)
+        .single();
+      data = result.data;
+    }
+
     return data?.company_id || null;
   } catch (error) {
     console.error('Error getting company by domain:', error);
