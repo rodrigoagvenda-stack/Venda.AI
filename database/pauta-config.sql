@@ -20,23 +20,27 @@ CREATE TABLE IF NOT EXISTS pauta_config (
 ALTER TABLE pauta_config ENABLE ROW LEVEL SECURITY;
 
 -- Service role pode fazer tudo
-CREATE POLICY IF NOT EXISTS "pauta_config_service_all" ON pauta_config
+DROP POLICY IF EXISTS "pauta_config_service_all" ON pauta_config;
+CREATE POLICY "pauta_config_service_all" ON pauta_config
   FOR ALL USING (true);
 
 -- Apenas admins podem ver configuracao
-CREATE POLICY IF NOT EXISTS "pauta_config_admin_select" ON pauta_config
+DROP POLICY IF EXISTS "pauta_config_admin_select" ON pauta_config;
+CREATE POLICY "pauta_config_admin_select" ON pauta_config
   FOR SELECT USING (
-    auth.uid() IN (SELECT auth_user_id FROM admin_users WHERE is_active = true)
+    auth.uid() IN (SELECT user_id FROM admin_users WHERE is_active = true)
   );
 
 -- Apenas admins podem atualizar configuracao
-CREATE POLICY IF NOT EXISTS "pauta_config_admin_update" ON pauta_config
+DROP POLICY IF EXISTS "pauta_config_admin_update" ON pauta_config;
+CREATE POLICY "pauta_config_admin_update" ON pauta_config
   FOR UPDATE USING (
-    auth.uid() IN (SELECT auth_user_id FROM admin_users WHERE is_active = true)
+    auth.uid() IN (SELECT user_id FROM admin_users WHERE is_active = true)
   );
 
 -- Trigger: atualizar updated_at
-CREATE TRIGGER IF NOT EXISTS update_pauta_config_updated_at
+DROP TRIGGER IF EXISTS update_pauta_config_updated_at ON pauta_config;
+CREATE TRIGGER update_pauta_config_updated_at
   BEFORE UPDATE ON pauta_config
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
