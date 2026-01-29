@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS pauta_responses (
   precisa_legenda TEXT, -- 'sim', 'nao'
 
   -- Campos específicos de Tráfego
-  metricas TEXT[], -- array: 'CPA', 'CPL', 'CPC', 'CPM', 'CTR', 'ROAS', etc.
+  tipo_campanha TEXT, -- tipo específico por plataforma (search, display, leads, etc.)
+  metricas JSONB, -- array de objetos: [{id, nome, valor}]
   campanha_especifica TEXT,
 
   -- Meta
