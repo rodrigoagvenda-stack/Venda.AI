@@ -19,14 +19,14 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('auth_user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
     }
 
     // Buscar configuração (usa maybeSingle para não dar erro se não existir registro)
-    const { data, error } = await supabase.from('briefing_config').select('*').maybeSingle();
+    const { data, error } = await supabase.from('pauta_config').select('*').maybeSingle();
 
     if (error) throw error;
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error fetching briefing config:', error);
+    console.error('Error fetching pauta config:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Erro ao buscar configuração' },
       { status: 500 }
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest) {
       .select('*')
       .eq('auth_user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
@@ -77,7 +77,7 @@ export async function PATCH(request: NextRequest) {
 
     // Verificar se já existe uma configuração
     const { data: existing } = await supabase
-      .from('briefing_config')
+      .from('pauta_config')
       .select('id')
       .maybeSingle();
 
@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest) {
     if (existing) {
       // Atualizar configuração existente
       const result = await supabase
-        .from('briefing_config')
+        .from('pauta_config')
         .update({
           webhook_url,
           webhook_secret,
@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest) {
     } else {
       // Criar nova configuração
       const result = await supabase
-        .from('briefing_config')
+        .from('pauta_config')
         .insert({
           webhook_url,
           webhook_secret,
@@ -118,11 +118,11 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Webhook configurado com sucesso!',
+      message: 'Webhook de pauta configurado com sucesso!',
       data,
     });
   } catch (error: any) {
-    console.error('Error updating briefing config:', error);
+    console.error('Error updating pauta config:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Erro ao atualizar configuração' },
       { status: 500 }

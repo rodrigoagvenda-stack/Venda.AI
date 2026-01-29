@@ -31,6 +31,17 @@ export interface BriefingConfig {
   updated_at: string;
 }
 
+export interface PautaConfig {
+  id: number;
+  webhook_url?: string;
+  webhook_secret?: string;
+  is_active: boolean;
+  last_test_at?: string;
+  last_test_status?: 'success' | 'failed';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BriefingFormData {
   nome_responsavel: string;
   email: string;

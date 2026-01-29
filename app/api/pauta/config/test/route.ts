@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar configuração
     const { data: config, error: configError } = await supabase
-      .from('briefing_config')
+      .from('pauta_config')
       .select('id, webhook_url, webhook_secret')
       .maybeSingle();
 
@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           event: 'test',
-          message: 'Teste de webhook do vend.AI',
+          type: 'pauta',
+          message: 'Teste de webhook de pauta do vend.AI',
           timestamp: new Date().toISOString(),
         }),
       });
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     // Salvar resultado
     if (config.id) {
       await supabase
-        .from('briefing_config')
+        .from('pauta_config')
         .update({
           last_test_at: new Date().toISOString(),
           last_test_status: testStatus,
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       status: testStatus,
     });
   } catch (error: any) {
-    console.error('Error testing webhook:', error);
+    console.error('Error testing pauta webhook:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Erro ao testar webhook' },
       { status: 500 }
