@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       .select('*')
       .eq('auth_user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
     // Buscar configuração
     const { data: config, error: configError } = await serviceClient
       .from('pauta_config')
-      .select('webhook_url, webhook_secret')
-      .single();
+      .select('id, webhook_url, webhook_secret')
+      .maybeSingle();
 
     if (configError) throw configError;
 
@@ -66,13 +66,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Salvar resultado
-    await serviceClient
-      .from('pauta_config')
-      .update({
-        last_test_at: new Date().toISOString(),
-        last_test_status: testStatus,
-      })
-      .eq('id', 1);
+    if (config.id) {
+      await serviceClient
+        .from('pauta_config')
+        .update({
+          last_test_at: new Date().toISOString(),
+          last_test_status: testStatus,
+        })
+        .eq('id', config.id);
+    }
 
     return NextResponse.json({
       success: testStatus === 'success',

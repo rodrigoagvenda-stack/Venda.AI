@@ -21,20 +21,25 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('auth_user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
     }
 
-    // Buscar configuração
-    const { data, error } = await serviceClient.from('pauta_config').select('*').single();
+    // Buscar configuração (usa maybeSingle para não dar erro se não existir registro)
+    const { data, error } = await serviceClient.from('pauta_config').select('*').maybeSingle();
 
     if (error) throw error;
 
+    // Se não existir configuração, retorna objeto vazio
     return NextResponse.json({
       success: true,
-      data: data || {},
+      data: data || {
+        webhook_url: '',
+        webhook_secret: '',
+        is_active: false,
+      },
     });
   } catch (error: any) {
     console.error('Error fetching pauta config:', error);
@@ -64,7 +69,7 @@ export async function PATCH(request: NextRequest) {
       .select('*')
       .eq('auth_user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!adminUser) {
       return NextResponse.json({ success: false, message: 'Acesso negado' }, { status: 403 });
@@ -73,18 +78,44 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { webhook_url, webhook_secret, is_active } = body;
 
-    // Atualizar configuração
-    const { data, error } = await serviceClient
+    // Verificar se já existe uma configuração
+    const { data: existing } = await serviceClient
       .from('pauta_config')
-      .update({
-        webhook_url,
-        webhook_secret,
-        is_active,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', 1)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
+
+    let data;
+    let error;
+
+    if (existing) {
+      // Atualizar configuração existente
+      const result = await serviceClient
+        .from('pauta_config')
+        .update({
+          webhook_url,
+          webhook_secret,
+          is_active,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Criar nova configuração
+      const result = await serviceClient
+        .from('pauta_config')
+        .insert({
+          webhook_url,
+          webhook_secret,
+          is_active,
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw error;
 
