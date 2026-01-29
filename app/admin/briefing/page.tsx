@@ -518,7 +518,7 @@ export default function BriefingListPage() {
                             key={i}
                             className="px-2 py-1 bg-orange-500/10 text-orange-400 rounded text-xs"
                           >
-                            {met}
+                            {typeof met === 'string' ? met : `${met.nome}: ${met.valor}`}
                           </span>
                         ))}
                       </div>
