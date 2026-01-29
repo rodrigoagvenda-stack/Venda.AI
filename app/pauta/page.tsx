@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ArrowRight, Loader2, Check } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Check, Plus, Trash2 } from 'lucide-react';
 import {
   TipoPauta,
+  MetricaComValor,
   SOCIAL_MEDIA_OBJETIVOS,
   SOCIAL_MEDIA_PLATAFORMAS,
   SOCIAL_MEDIA_QUANTIDADE_POSTS,
   SOCIAL_MEDIA_FORMATOS,
   TRAFEGO_OBJETIVOS,
   TRAFEGO_PLATAFORMAS,
-  TRAFEGO_METRICAS,
+  TIPOS_CAMPANHA_POR_PLATAFORMA,
+  EXEMPLOS_METRICAS,
 } from '@/types/pauta';
 import { Logo } from '@/components/Logo';
 
@@ -28,7 +30,8 @@ interface FormData {
   formatos_conteudo: string[];
   precisa_copy?: 'sim' | 'nao';
   precisa_legenda?: 'sim' | 'nao';
-  metricas: string[];
+  tipo_campanha?: string;
+  metricas: MetricaComValor[];
   campanha_especifica?: string;
   observacoes?: string;
 }
@@ -44,14 +47,14 @@ export default function PautaPage() {
     objetivos: [],
     plataformas: [],
     formatos_conteudo: [],
-    metricas: [],
+    metricas: [{ id: crypto.randomUUID(), nome: '', valor: '' }],
   });
 
   // Define steps based on tipo_pauta
   const getTotalSteps = () => {
     if (!formData.tipo_pauta) return 1; // Just the tipo selection
     if (formData.tipo_pauta === 'social_media') return 10; // tipo + 9 questions
-    return 8; // tipo + 7 questions for trafego (inclui métricas)
+    return 9; // tipo + 8 questions for trafego (inclui tipo_campanha e métricas com valores)
   };
 
   const totalSteps = getTotalSteps();
@@ -61,7 +64,7 @@ export default function PautaPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayField = (field: 'objetivos' | 'plataformas' | 'formatos_conteudo' | 'metricas', value: string) => {
+  const toggleArrayField = (field: 'objetivos' | 'plataformas' | 'formatos_conteudo', value: string) => {
     setFormData((prev) => {
       const currentArray = prev[field] || [];
       if (currentArray.includes(value)) {
@@ -70,6 +73,52 @@ export default function PautaPage() {
         return { ...prev, [field]: [...currentArray, value] };
       }
     });
+  };
+
+  // Funções para manipular métricas dinâmicas
+  const addMetrica = () => {
+    setFormData((prev) => ({
+      ...prev,
+      metricas: [...prev.metricas, { id: crypto.randomUUID(), nome: '', valor: '' }],
+    }));
+  };
+
+  const removeMetrica = (id: string) => {
+    if (formData.metricas.length > 1) {
+      setFormData((prev) => ({
+        ...prev,
+        metricas: prev.metricas.filter((m) => m.id !== id),
+      }));
+    }
+  };
+
+  const updateMetrica = (id: string, field: 'nome' | 'valor', value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      metricas: prev.metricas.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
+    }));
+  };
+
+  const preencherExemploMetrica = (index: number) => {
+    const exemplo = EXEMPLOS_METRICAS[index % EXEMPLOS_METRICAS.length];
+    const metricaId = formData.metricas[index]?.id;
+    if (metricaId) {
+      setFormData((prev) => ({
+        ...prev,
+        metricas: prev.metricas.map((m) =>
+          m.id === metricaId ? { ...m, nome: exemplo.nome, valor: exemplo.valor } : m
+        ),
+      }));
+    }
+  };
+
+  // Função para voltar
+  const prevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    } else if (currentStep === 0) {
+      setCurrentStep(-1);
+    }
   };
 
   const validateCurrentStep = () => {
@@ -98,9 +147,10 @@ export default function PautaPage() {
         case 2: return !!formData.nome_cs;
         case 3: return formData.objetivos.length > 0;
         case 4: return formData.plataformas.length > 0;
-        case 5: return formData.metricas.length > 0; // métricas obrigatório
-        case 6: return true; // campanha_especifica is optional
-        case 7: return true; // observacoes is optional
+        case 5: return !!formData.tipo_campanha; // tipo de campanha obrigatório
+        case 6: return formData.metricas.some((m) => m.nome.trim() && m.valor.trim()); // pelo menos 1 métrica com nome e valor
+        case 7: return true; // campanha_especifica is optional
+        case 8: return true; // observacoes is optional
         default: return true;
       }
     }
@@ -212,7 +262,7 @@ export default function PautaPage() {
                 objetivos: [],
                 plataformas: [],
                 formatos_conteudo: [],
-                metricas: [],
+                metricas: [{ id: crypto.randomUUID(), nome: '', valor: '' }],
               });
             }}
             className="text-sm px-6 py-5"
@@ -335,9 +385,14 @@ export default function PautaPage() {
                 className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -354,9 +409,14 @@ export default function PautaPage() {
                 className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -378,9 +438,14 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -402,9 +467,14 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -446,9 +516,14 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.formatos_conteudo.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={formData.formatos_conteudo.length === 0}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -462,6 +537,9 @@ export default function PautaPage() {
                 <SingleChoiceButton label="Sim" value="sim" field="precisa_copy" index={0} />
                 <SingleChoiceButton label="Não" value="nao" field="precisa_copy" index={1} />
               </div>
+              <Button size="default" variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+              </Button>
             </div>
           );
 
@@ -475,6 +553,9 @@ export default function PautaPage() {
                 <SingleChoiceButton label="Sim" value="sim" field="precisa_legenda" index={0} />
                 <SingleChoiceButton label="Não" value="nao" field="precisa_legenda" index={1} />
               </div>
+              <Button size="default" variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+              </Button>
             </div>
           );
 
@@ -492,18 +573,23 @@ export default function PautaPage() {
                 className="text-sm min-h-[100px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
                 autoFocus
               />
-              <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           );
       }
@@ -511,6 +597,17 @@ export default function PautaPage() {
 
     // ============ TRÁFEGO PAGO QUESTIONS ============
     if (formData.tipo_pauta === 'trafego') {
+      // Obter tipos de campanha baseado na plataforma selecionada
+      const getTiposCampanha = () => {
+        if (formData.plataformas.length === 0) return [];
+        // Se selecionou apenas uma plataforma, mostra os tipos dela
+        if (formData.plataformas.length === 1) {
+          return TIPOS_CAMPANHA_POR_PLATAFORMA[formData.plataformas[0]] || [];
+        }
+        // Se selecionou mais de uma, mostra opção genérica
+        return TIPOS_CAMPANHA_POR_PLATAFORMA['Mais de uma'] || [];
+      };
+
       switch (currentStep) {
         case 1:
           return (
@@ -525,9 +622,14 @@ export default function PautaPage() {
                 className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={!formData.nome_cliente}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -545,9 +647,14 @@ export default function PautaPage() {
                 className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={!formData.nome_cs}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -569,9 +676,14 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={formData.objetivos.length === 0}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -593,9 +705,14 @@ export default function PautaPage() {
                   />
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={formData.plataformas.length === 0}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
@@ -603,27 +720,136 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
-                Quais métricas serão analisadas?
+                Qual tipo de campanha?
               </h2>
-              <p className="text-muted-foreground">Pode marcar mais de uma</p>
+              <p className="text-muted-foreground">
+                Selecione o tipo específico para {formData.plataformas.join(', ')}
+              </p>
               <div className="space-y-3">
-                {TRAFEGO_METRICAS.map((metrica, index) => (
-                  <MultiChoiceButton
-                    key={metrica}
-                    label={metrica}
-                    selected={formData.metricas.includes(metrica)}
-                    onClick={() => toggleArrayField('metricas', metrica)}
-                    index={index}
-                  />
+                {getTiposCampanha().map((tipo, index) => (
+                  <button
+                    key={tipo.value}
+                    onClick={() => {
+                      updateField('tipo_campanha', tipo.value);
+                      setTimeout(() => setCurrentStep((prev) => prev + 1), 300);
+                    }}
+                    className="w-full text-left p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-accent/50 transition-all flex items-center gap-3 group"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted group-hover:bg-primary/80 group-hover:text-primary-foreground flex items-center justify-center text-sm font-medium">
+                      {String.fromCharCode(65 + index)}
+                    </div>
+                    <span className="text-sm">{tipo.label}</span>
+                  </button>
                 ))}
               </div>
-              <Button size="default" onClick={nextStep} disabled={formData.metricas.length === 0}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="default" variant="outline" onClick={prevStep}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Button>
             </div>
           );
 
         case 6:
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
+                📊 Quais métricas você quer analisar?
+              </h2>
+              <p className="text-muted-foreground">
+                Adicione as métricas e seus valores atuais. Mínimo 1 métrica obrigatória.
+              </p>
+
+              <div className="space-y-4">
+                {formData.metricas.map((metrica, index) => (
+                  <div
+                    key={metrica.id}
+                    className="p-4 rounded-lg border bg-card/50 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Métrica {index + 1}
+                      </span>
+                      {formData.metricas.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeMetrica(metrica.id)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Nome da métrica</label>
+                        <Input
+                          placeholder="Ex: CTR, CPA, ROAS..."
+                          value={metrica.nome}
+                          onChange={(e) => updateMetrica(metrica.id, 'nome', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Valor atual</label>
+                        <Input
+                          placeholder="Ex: 2.5%, R$ 45,00"
+                          value={metrica.valor}
+                          onChange={(e) => updateMetrica(metrica.id, 'valor', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {!metrica.nome && !metrica.valor && (
+                      <button
+                        type="button"
+                        onClick={() => preencherExemploMetrica(index)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Preencher com exemplo
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addMetrica}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar mais métrica
+              </Button>
+
+              <div className="p-3 rounded-lg bg-muted/50 text-sm">
+                <p className="font-medium mb-2">💡 Exemplos de métricas comuns:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-muted-foreground">
+                  {EXEMPLOS_METRICAS.map((ex) => (
+                    <span key={ex.nome}>
+                      {ex.nome}: {ex.valor}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button
+                  size="default"
+                  onClick={nextStep}
+                  disabled={!formData.metricas.some((m) => m.nome.trim() && m.valor.trim())}
+                >
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+
+        case 7:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -637,13 +863,18 @@ export default function PautaPage() {
                 className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0"
                 autoFocus
               />
-              <Button size="default" onClick={nextStep}>
-                OK <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           );
 
-        case 7:
+        case 8:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -657,18 +888,23 @@ export default function PautaPage() {
                 className="text-sm min-h-[100px] bg-transparent border-border focus-visible:ring-0 focus-visible:border-primary"
                 autoFocus
               />
-              <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Enviar Pauta <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           );
       }

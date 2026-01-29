@@ -15,13 +15,20 @@ export interface PautaSocialMediaFormData {
 }
 
 // ============ TRÁFEGO PAGO ============
+export interface MetricaComValor {
+  id: string;
+  nome: string;
+  valor: string;
+}
+
 export interface PautaTrafegoFormData {
   tipo_pauta: 'trafego';
   nome_cliente: string;
   nome_cs: string;
   objetivos: string[]; // múltipla escolha
   plataformas: string[]; // múltipla escolha
-  metricas: string[]; // métricas a serem usadas na pauta
+  tipo_campanha?: string; // tipo específico por plataforma
+  metricas: MetricaComValor[]; // métricas com nome e valor
   campanha_especifica?: string;
   observacoes?: string;
 }
@@ -43,7 +50,8 @@ export interface PautaResponse {
   precisa_copy?: 'sim' | 'nao';
   precisa_legenda?: 'sim' | 'nao';
   // Tráfego specific
-  metricas?: string[];
+  tipo_campanha?: string;
+  metricas?: MetricaComValor[];
   campanha_especifica?: string;
   // Common
   observacoes?: string;
@@ -126,3 +134,46 @@ export const TRAFEGO_METRICAS = [
   'Alcance',
   'Frequência',
 ] as const;
+
+// Tipos de campanha por plataforma
+export const TIPOS_CAMPANHA_POR_PLATAFORMA: Record<string, { value: string; label: string }[]> = {
+  'Google Ads': [
+    { value: 'search', label: 'Search (Pesquisa)' },
+    { value: 'display', label: 'Display' },
+    { value: 'shopping', label: 'Shopping' },
+    { value: 'performance_max', label: 'Performance Max' },
+    { value: 'video', label: 'Vídeo (YouTube)' },
+    { value: 'discovery', label: 'Discovery' },
+    { value: 'outro', label: 'Outro' },
+  ],
+  'Meta Ads': [
+    { value: 'reconhecimento', label: 'Reconhecimento' },
+    { value: 'trafego', label: 'Tráfego' },
+    { value: 'engajamento', label: 'Engajamento' },
+    { value: 'leads', label: 'Leads' },
+    { value: 'vendas', label: 'Vendas' },
+    { value: 'outro', label: 'Outro' },
+  ],
+  'TikTok Ads': [
+    { value: 'alcance', label: 'Alcance' },
+    { value: 'trafego', label: 'Tráfego' },
+    { value: 'visualizacoes_video', label: 'Visualizações de Vídeo' },
+    { value: 'instalacoes_app', label: 'Instalações de App' },
+    { value: 'conversoes', label: 'Conversões' },
+    { value: 'outro', label: 'Outro' },
+  ],
+  'Mais de uma': [
+    { value: 'multiplas', label: 'Múltiplas plataformas' },
+    { value: 'outro', label: 'Outro' },
+  ],
+};
+
+// Exemplos de métricas para ajudar o usuário
+export const EXEMPLOS_METRICAS = [
+  { nome: 'CTR', valor: '2.5%' },
+  { nome: 'CPA', valor: 'R$ 45,00' },
+  { nome: 'ROAS', valor: '3.2x' },
+  { nome: 'CPM', valor: 'R$ 15,00' },
+  { nome: 'Taxa de Conversão', valor: '4.8%' },
+  { nome: 'Impressões', valor: '150.000' },
+];
