@@ -15,9 +15,16 @@ import {
   SOCIAL_MEDIA_FORMATOS,
   TRAFEGO_OBJETIVOS,
   TRAFEGO_PLATAFORMAS,
+  TRAFEGO_METRICAS,
   TIPOS_CAMPANHA_POR_PLATAFORMA,
-  EXEMPLOS_METRICAS,
 } from '@/types/pauta';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Logo } from '@/components/Logo';
 
 interface FormData {
@@ -97,19 +104,6 @@ export default function PautaPage() {
       ...prev,
       metricas: prev.metricas.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
     }));
-  };
-
-  const preencherExemploMetrica = (index: number) => {
-    const exemplo = EXEMPLOS_METRICAS[index % EXEMPLOS_METRICAS.length];
-    const metricaId = formData.metricas[index]?.id;
-    if (metricaId) {
-      setFormData((prev) => ({
-        ...prev,
-        metricas: prev.metricas.map((m) =>
-          m.id === metricaId ? { ...m, nome: exemplo.nome, valor: exemplo.valor } : m
-        ),
-      }));
-    }
   };
 
   // Função para voltar
@@ -752,10 +746,10 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
-                📊 Quais métricas você quer analisar?
+                Quais métricas você quer analisar?
               </h2>
               <p className="text-muted-foreground">
-                Adicione as métricas e seus valores atuais. Mínimo 1 métrica obrigatória.
+                Selecione as métricas e informe seus valores atuais. Mínimo 1 métrica obrigatória.
               </p>
 
               <div className="space-y-4">
@@ -784,11 +778,21 @@ export default function PautaPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Nome da métrica</label>
-                        <Input
-                          placeholder="Ex: CTR, CPA, ROAS..."
+                        <Select
                           value={metrica.nome}
-                          onChange={(e) => updateMetrica(metrica.id, 'nome', e.target.value)}
-                        />
+                          onValueChange={(value) => updateMetrica(metrica.id, 'nome', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma métrica" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TRAFEGO_METRICAS.map((m) => (
+                              <SelectItem key={m} value={m}>
+                                {m}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Valor atual</label>
@@ -799,16 +803,6 @@ export default function PautaPage() {
                         />
                       </div>
                     </div>
-
-                    {!metrica.nome && !metrica.valor && (
-                      <button
-                        type="button"
-                        onClick={() => preencherExemploMetrica(index)}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Preencher com exemplo
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
@@ -822,17 +816,6 @@ export default function PautaPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar mais métrica
               </Button>
-
-              <div className="p-3 rounded-lg bg-muted/50 text-sm">
-                <p className="font-medium mb-2">💡 Exemplos de métricas comuns:</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-muted-foreground">
-                  {EXEMPLOS_METRICAS.map((ex) => (
-                    <span key={ex.nome}>
-                      {ex.nome}: {ex.valor}
-                    </span>
-                  ))}
-                </div>
-              </div>
 
               <div className="flex items-center gap-3">
                 <Button size="default" variant="outline" onClick={prevStep}>
