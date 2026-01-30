@@ -11,12 +11,13 @@ import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { BriefingConfig } from '@/types/briefing';
 import { formatDateTime } from '@/lib/utils/format';
 
-interface WebhookConfig {
+interface PautaConfig {
+  id?: number;
   webhook_url?: string;
   webhook_secret?: string;
-  is_active: boolean;
+  is_active?: boolean;
   last_test_at?: string;
-  last_test_status?: 'success' | 'failed';
+  last_test_status?: string;
 }
 
 export default function BriefingConfigPage() {
@@ -29,11 +30,11 @@ export default function BriefingConfigPage() {
     is_active: false,
   });
 
-  // Pauta config
+  // Estado para configuração da pauta
   const [pautaLoading, setPautaLoading] = useState(true);
   const [pautaSaving, setPautaSaving] = useState(false);
   const [pautaTesting, setPautaTesting] = useState(false);
-  const [pautaConfig, setPautaConfig] = useState<Partial<WebhookConfig>>({
+  const [pautaConfig, setPautaConfig] = useState<PautaConfig>({
     webhook_url: '',
     webhook_secret: '',
     is_active: false,
@@ -44,7 +45,6 @@ export default function BriefingConfigPage() {
     fetchPautaConfig();
   }, []);
 
-  // ---- Briefing Config ----
   async function fetchConfig() {
     try {
       const response = await fetch('/api/briefing/config');
@@ -55,7 +55,7 @@ export default function BriefingConfigPage() {
       setConfig(data.data || {});
     } catch (error: any) {
       console.error('Error fetching config:', error);
-      toast.error(error.message || 'Erro ao carregar configuração do briefing');
+      toast.error(error.message || 'Erro ao carregar configuração');
     } finally {
       setLoading(false);
     }
@@ -99,6 +99,7 @@ export default function BriefingConfigPage() {
         toast.error('Falha ao testar webhook');
       }
 
+      // Atualizar configuração para pegar novo status de teste
       await fetchConfig();
     } catch (error: any) {
       console.error('Error testing webhook:', error);
@@ -108,7 +109,7 @@ export default function BriefingConfigPage() {
     }
   }
 
-  // ---- Pauta Config ----
+  // Funções para configuração da pauta
   async function fetchPautaConfig() {
     try {
       const response = await fetch('/api/pauta/config');
@@ -119,7 +120,10 @@ export default function BriefingConfigPage() {
       setPautaConfig(data.data || {});
     } catch (error: any) {
       console.error('Error fetching pauta config:', error);
-      toast.error(error.message || 'Erro ao carregar configuração da pauta');
+      // Não mostrar erro se a tabela não existir
+      if (!error.message?.includes('pauta_config')) {
+        toast.error(error.message || 'Erro ao carregar configuração da pauta');
+      }
     } finally {
       setPautaLoading(false);
     }
@@ -160,9 +164,10 @@ export default function BriefingConfigPage() {
       if (data.success) {
         toast.success('Webhook da pauta testado com sucesso!');
       } else {
-        toast.error('Falha ao testar webhook da pauta');
+        toast.error(data.message || 'Falha ao testar webhook da pauta');
       }
 
+      // Atualizar configuração para pegar novo status de teste
       await fetchPautaConfig();
     } catch (error: any) {
       console.error('Error testing pauta webhook:', error);
@@ -172,7 +177,7 @@ export default function BriefingConfigPage() {
     }
   }
 
-  if (loading && pautaLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-shimmer h-8 w-32 rounded-lg" />
@@ -183,23 +188,22 @@ export default function BriefingConfigPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold">Configurações de Webhooks</h1>
+        <h1 className="text-3xl font-bold">⚙️ Configuração de Webhook</h1>
         <p className="text-muted-foreground mt-1">
-          Configure os webhooks para receber notificações
+          Configure o webhook para receber notificações quando leads preencherem o briefing
         </p>
       </div>
 
-      {/* Webhook do Briefing */}
       <Card>
         <CardHeader>
-          <CardTitle>Webhook do Briefing</CardTitle>
+          <CardTitle>Webhook</CardTitle>
           <CardDescription>
-            Notificações quando leads preencherem o formulário de briefing
+            Quando um lead preencher o briefing, o sistema enviará os dados para o webhook configurado.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="webhook_url">Webhook URL</Label>
+            <Label htmlFor="webhook_url">🔗 Webhook URL *</Label>
             <Input
               id="webhook_url"
               type="url"
@@ -210,24 +214,24 @@ export default function BriefingConfigPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="webhook_secret">Secret (opcional)</Label>
+            <Label htmlFor="webhook_secret">🔐 Webhook Secret (opcional)</Label>
             <Input
               id="webhook_secret"
               type="text"
-              placeholder="seu-secret-aqui"
+              placeholder="abc123xyz"
               value={config.webhook_secret || ''}
               onChange={(e) => setConfig({ ...config, webhook_secret: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              Enviado no header x-webhook-secret
+              Enviado no header x-webhook-secret para validação
             </p>
           </div>
 
           <div className="flex items-center justify-between border rounded-lg p-4">
             <div>
-              <Label>Ativar</Label>
+              <Label>Ativar Webhook</Label>
               <p className="text-xs text-muted-foreground">
-                Webhook chamado ao receber briefing
+                Webhook será chamado automaticamente ao receber briefing
               </p>
             </div>
             <Switch
@@ -245,7 +249,7 @@ export default function BriefingConfigPage() {
                     Testando...
                   </>
                 ) : (
-                  'Testar'
+                  'Testar Webhook'
                 )}
               </Button>
               <Button onClick={handleSave} disabled={saving}>

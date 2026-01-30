@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Enviar payload de teste
     let testStatus = 'failed';
+    let errorMessage = '';
     try {
       const response = await fetch(config.webhook_url, {
         method: 'POST',
@@ -58,24 +59,38 @@ export async function POST(request: NextRequest) {
 
       if (response.ok) {
         testStatus = 'success';
+      } else {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        console.error('Pauta webhook test failed with status:', response.status, response.statusText);
       }
-    } catch (error) {
+    } catch (error: any) {
+      errorMessage = error.message || 'Erro de conexão';
       console.error('Pauta webhook test failed:', error);
     }
 
-    // Salvar resultado
-    await supabase
+    // Salvar resultado (buscar id dinamicamente)
+    const { data: existingConfig } = await supabase
       .from('pauta_config')
-      .update({
-        last_test_at: new Date().toISOString(),
-        last_test_status: testStatus,
-      })
-      .eq('id', 1);
+      .select('id')
+      .single();
+
+    if (existingConfig) {
+      await supabase
+        .from('pauta_config')
+        .update({
+          last_test_at: new Date().toISOString(),
+          last_test_status: testStatus,
+        })
+        .eq('id', existingConfig.id);
+    }
 
     return NextResponse.json({
       success: testStatus === 'success',
-      message: testStatus === 'success' ? 'Webhook testado com sucesso!' : 'Falha ao testar webhook',
+      message: testStatus === 'success'
+        ? 'Webhook testado com sucesso!'
+        : `Falha ao testar webhook${errorMessage ? `: ${errorMessage}` : ''}`,
       status: testStatus,
+      error: errorMessage || undefined,
     });
   } catch (error: any) {
     console.error('Error testing pauta webhook:', error);

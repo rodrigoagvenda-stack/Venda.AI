@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .eq('is_active', true)
       .single();
 
@@ -28,7 +28,10 @@ export async function GET(request: NextRequest) {
     // Buscar configuração
     const { data, error } = await supabase.from('pauta_config').select('*').single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = no rows returned - isso é OK, retornamos objeto vazio
+      throw error;
+    }
 
     return NextResponse.json({
       success: true,
@@ -59,7 +62,7 @@ export async function PATCH(request: NextRequest) {
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .eq('is_active', true)
       .single();
 
@@ -70,24 +73,54 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { webhook_url, webhook_secret, is_active } = body;
 
-    // Atualizar configuração
-    const { data, error } = await supabase
+    // Verificar se já existe uma configuração
+    const { data: existingConfig } = await supabase
       .from('pauta_config')
-      .update({
-        webhook_url,
-        webhook_secret,
-        is_active,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', 1)
-      .select()
+      .select('id')
       .single();
+
+    let data;
+    let error;
+
+    if (existingConfig) {
+      // Atualizar configuração existente
+      const result = await supabase
+        .from('pauta_config')
+        .update({
+          webhook_url,
+          webhook_secret,
+          is_active,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingConfig.id)
+        .select()
+        .single();
+
+      data = result.data;
+      error = result.error;
+    } else {
+      // Criar nova configuração
+      const result = await supabase
+        .from('pauta_config')
+        .insert({
+          webhook_url,
+          webhook_secret,
+          is_active,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) throw error;
 
     return NextResponse.json({
       success: true,
-      message: 'Webhook da pauta configurado com sucesso!',
+      message: 'Configuração da pauta salva com sucesso!',
       data,
     });
   } catch (error: any) {
