@@ -426,7 +426,7 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
-                Qual é o telefone do cliente?
+                Qual é o telefone do CS?
               </h2>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 h-12 border-b border-border">
@@ -673,7 +673,7 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
-                Qual é o telefone do cliente?
+                Qual é o telefone do CS?
               </h2>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 h-12 border-b border-border">
