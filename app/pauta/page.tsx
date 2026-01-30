@@ -26,11 +26,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Logo } from '@/components/Logo';
+import { usePhoneMask } from '@/lib/hooks/usePhoneMask';
 
 interface FormData {
   tipo_pauta?: TipoPauta;
   nome_cs: string;
   nome_cliente: string;
+  telefone: string;
   objetivos: string[];
   plataformas: string[];
   quantidade_posts?: string;
@@ -51,17 +53,20 @@ export default function PautaPage() {
   const [formData, setFormData] = useState<FormData>({
     nome_cs: '',
     nome_cliente: '',
+    telefone: '',
     objetivos: [],
     plataformas: [],
     formatos_conteudo: [],
     metricas: [{ id: crypto.randomUUID(), nome: '', valor: '' }],
   });
 
+  const { applyPhoneMask, removeMask } = usePhoneMask();
+
   // Define steps based on tipo_pauta
   const getTotalSteps = () => {
     if (!formData.tipo_pauta) return 1; // Just the tipo selection
-    if (formData.tipo_pauta === 'social_media') return 10; // tipo + 9 questions
-    return 9; // tipo + 8 questions for trafego (inclui tipo_campanha e métricas com valores)
+    if (formData.tipo_pauta === 'social_media') return 11; // tipo + 10 questions (includes telefone)
+    return 10; // tipo + 9 questions for trafego (includes telefone)
   };
 
   const totalSteps = getTotalSteps();
@@ -125,26 +130,28 @@ export default function PautaPage() {
       switch (currentStep) {
         case 1: return !!formData.nome_cs;
         case 2: return !!formData.nome_cliente;
-        case 3: return formData.objetivos.length > 0;
-        case 4: return formData.plataformas.length > 0;
-        case 5: return !!formData.quantidade_posts;
-        case 6: return formData.formatos_conteudo.length > 0;
-        case 7: return !!formData.precisa_copy;
-        case 8: return !!formData.precisa_legenda;
-        case 9: return true; // observacoes is optional
+        case 3: return removeMask(formData.telefone).length >= 10; // telefone obrigatório
+        case 4: return formData.objetivos.length > 0;
+        case 5: return formData.plataformas.length > 0;
+        case 6: return !!formData.quantidade_posts;
+        case 7: return formData.formatos_conteudo.length > 0;
+        case 8: return !!formData.precisa_copy;
+        case 9: return !!formData.precisa_legenda;
+        case 10: return true; // observacoes is optional
         default: return true;
       }
     } else {
       // trafego
       switch (currentStep) {
         case 1: return !!formData.nome_cliente;
-        case 2: return !!formData.nome_cs;
-        case 3: return formData.objetivos.length > 0;
-        case 4: return formData.plataformas.length > 0;
-        case 5: return !!formData.tipo_campanha; // tipo de campanha obrigatório
-        case 6: return formData.metricas.some((m) => m.nome.trim() && m.valor.trim()); // pelo menos 1 métrica com nome e valor
-        case 7: return true; // campanha_especifica is optional
-        case 8: return true; // observacoes is optional
+        case 2: return removeMask(formData.telefone).length >= 10; // telefone obrigatório
+        case 3: return !!formData.nome_cs;
+        case 4: return formData.objetivos.length > 0;
+        case 5: return formData.plataformas.length > 0;
+        case 6: return !!formData.tipo_campanha; // tipo de campanha obrigatório
+        case 7: return formData.metricas.some((m) => m.nome.trim() && m.valor.trim()); // pelo menos 1 métrica com nome e valor
+        case 8: return true; // campanha_especifica is optional
+        case 9: return true; // observacoes is optional
         default: return true;
       }
     }
@@ -253,6 +260,7 @@ export default function PautaPage() {
               setFormData({
                 nome_cs: '',
                 nome_cliente: '',
+                telefone: '',
                 objetivos: [],
                 plataformas: [],
                 formatos_conteudo: [],
@@ -418,6 +426,40 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
+                Qual é o telefone do cliente?
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 h-12 border-b border-border">
+                  <span className="text-xl">🇧🇷</span>
+                  <span className="text-muted-foreground">+55</span>
+                </div>
+                <Input
+                  value={formData.telefone}
+                  onChange={(e) => updateField('telefone', applyPhoneMask(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 flex-1"
+                  autoFocus
+                  maxLength={15}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Este número será usado como identificador único
+              </p>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={removeMask(formData.telefone).length < 10}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+
+        case 4:
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 Qual é o objetivo principal da pauta?
               </h2>
               <p className="text-muted-foreground">Pode marcar mais de um</p>
@@ -443,7 +485,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 4:
+        case 5:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -472,7 +514,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 5:
+        case 6:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -492,7 +534,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 6:
+        case 7:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -521,7 +563,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 7:
+        case 8:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -537,7 +579,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 8:
+        case 9:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -553,7 +595,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 9:
+        case 10:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -631,6 +673,40 @@ export default function PautaPage() {
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
+                Qual é o telefone do cliente?
+              </h2>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 h-12 border-b border-border">
+                  <span className="text-xl">🇧🇷</span>
+                  <span className="text-muted-foreground">+55</span>
+                </div>
+                <Input
+                  value={formData.telefone}
+                  onChange={(e) => updateField('telefone', applyPhoneMask(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className="text-base h-12 bg-transparent border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 flex-1"
+                  autoFocus
+                  maxLength={15}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Este número será usado como identificador único
+              </p>
+              <div className="flex items-center gap-3">
+                <Button size="default" variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                </Button>
+                <Button size="default" onClick={nextStep} disabled={removeMask(formData.telefone).length < 10}>
+                  OK <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+
+        case 3:
+          return (
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-normal">
                 CS responsável
               </h2>
               <p className="text-muted-foreground">Ex: Rodrigo, Ana, João</p>
@@ -652,7 +728,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 3:
+        case 4:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -681,7 +757,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 4:
+        case 5:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -710,7 +786,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 5:
+        case 6:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -742,7 +818,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 6:
+        case 7:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -832,7 +908,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 7:
+        case 8:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">
@@ -857,7 +933,7 @@ export default function PautaPage() {
             </div>
           );
 
-        case 8:
+        case 9:
           return (
             <div className="space-y-4">
               <h2 className="text-xl md:text-2xl font-normal">

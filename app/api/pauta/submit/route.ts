@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar campos obrigatórios comuns
-    const commonRequired = ['nome_cs', 'nome_cliente', 'objetivos', 'plataformas'];
+    const commonRequired = ['nome_cs', 'nome_cliente', 'telefone', 'objetivos', 'plataformas'];
     for (const field of commonRequired) {
       if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
         return NextResponse.json(
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       tipo_pauta: formData.tipo_pauta,
       nome_cs: formData.nome_cs,
       nome_cliente: formData.nome_cliente,
+      telefone: formData.telefone,
       objetivos: formData.objetivos,
       plataformas: formData.plataformas,
       observacoes: formData.observacoes || null,
