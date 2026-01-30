@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { webhook_url, webhook_secret, is_active } = body;
+    const { webhook_url, webhook_secret, is_active, uazapi_url, uazapi_token } = body;
 
     // Verificar se já existe uma configuração
     const { data: existingConfig } = await supabase
@@ -90,6 +90,8 @@ export async function PATCH(request: NextRequest) {
           webhook_url,
           webhook_secret,
           is_active,
+          uazapi_url,
+          uazapi_token,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingConfig.id)
@@ -106,6 +108,8 @@ export async function PATCH(request: NextRequest) {
           webhook_url,
           webhook_secret,
           is_active,
+          uazapi_url,
+          uazapi_token,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })

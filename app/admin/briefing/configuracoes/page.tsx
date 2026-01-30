@@ -16,6 +16,8 @@ interface PautaConfig {
   webhook_url?: string;
   webhook_secret?: string;
   is_active?: boolean;
+  uazapi_url?: string;
+  uazapi_token?: string;
   last_test_at?: string;
   last_test_status?: string;
 }
@@ -227,35 +229,6 @@ export default function BriefingConfigPage() {
             </p>
           </div>
 
-          <div className="border-t pt-4 mt-4">
-            <h3 className="text-sm font-medium mb-3">📱 Integração UazAPI (WhatsApp)</h3>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="uazapi_url">URL da Instância</Label>
-                <Input
-                  id="uazapi_url"
-                  type="url"
-                  placeholder="https://sua-instancia.uazapi.com"
-                  value={config.uazapi_url || ''}
-                  onChange={(e) => setConfig({ ...config, uazapi_url: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="uazapi_token">Token de Autenticação</Label>
-                <Input
-                  id="uazapi_token"
-                  type="password"
-                  placeholder="seu-token-aqui"
-                  value={config.uazapi_token || ''}
-                  onChange={(e) => setConfig({ ...config, uazapi_token: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Credenciais enviadas no payload do webhook para o n8n usar
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="flex items-center justify-between border rounded-lg p-4">
             <div>
               <Label>Ativar Webhook</Label>
@@ -347,6 +320,35 @@ export default function BriefingConfigPage() {
             <p className="text-xs text-muted-foreground">
               Enviado no header x-webhook-secret
             </p>
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-sm font-medium mb-3">📱 Integração UazAPI (WhatsApp)</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pauta_uazapi_url">URL da Instância</Label>
+                <Input
+                  id="pauta_uazapi_url"
+                  type="url"
+                  placeholder="https://sua-instancia.uazapi.com"
+                  value={pautaConfig.uazapi_url || ''}
+                  onChange={(e) => setPautaConfig({ ...pautaConfig, uazapi_url: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pauta_uazapi_token">Token de Autenticação</Label>
+                <Input
+                  id="pauta_uazapi_token"
+                  type="password"
+                  placeholder="seu-token-aqui"
+                  value={pautaConfig.uazapi_token || ''}
+                  onChange={(e) => setPautaConfig({ ...pautaConfig, uazapi_token: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Credenciais enviadas no payload do webhook para o n8n usar
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center justify-between border rounded-lg p-4">
