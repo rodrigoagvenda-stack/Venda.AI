@@ -11,6 +11,15 @@ import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { BriefingConfig } from '@/types/briefing';
 import { formatDateTime } from '@/lib/utils/format';
 
+interface PautaConfig {
+  id?: number;
+  webhook_url?: string;
+  webhook_secret?: string;
+  is_active?: boolean;
+  last_test_at?: string;
+  last_test_status?: string;
+}
+
 export default function BriefingConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -21,8 +30,19 @@ export default function BriefingConfigPage() {
     is_active: false,
   });
 
+  // Estado para configuração da pauta
+  const [pautaLoading, setPautaLoading] = useState(true);
+  const [pautaSaving, setPautaSaving] = useState(false);
+  const [pautaTesting, setPautaTesting] = useState(false);
+  const [pautaConfig, setPautaConfig] = useState<PautaConfig>({
+    webhook_url: '',
+    webhook_secret: '',
+    is_active: false,
+  });
+
   useEffect(() => {
     fetchConfig();
+    fetchPautaConfig();
   }, []);
 
   async function fetchConfig() {
@@ -86,6 +106,74 @@ export default function BriefingConfigPage() {
       toast.error(error.message || 'Erro ao testar webhook');
     } finally {
       setTesting(false);
+    }
+  }
+
+  // Funções para configuração da pauta
+  async function fetchPautaConfig() {
+    try {
+      const response = await fetch('/api/pauta/config');
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      setPautaConfig(data.data || {});
+    } catch (error: any) {
+      console.error('Error fetching pauta config:', error);
+      // Não mostrar erro se a tabela não existir
+      if (!error.message?.includes('pauta_config')) {
+        toast.error(error.message || 'Erro ao carregar configuração da pauta');
+      }
+    } finally {
+      setPautaLoading(false);
+    }
+  }
+
+  async function handlePautaSave() {
+    setPautaSaving(true);
+    try {
+      const response = await fetch('/api/pauta/config', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pautaConfig),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      toast.success('Configuração da pauta salva com sucesso!');
+      setPautaConfig(data.data);
+    } catch (error: any) {
+      console.error('Error saving pauta config:', error);
+      toast.error(error.message || 'Erro ao salvar configuração da pauta');
+    } finally {
+      setPautaSaving(false);
+    }
+  }
+
+  async function handlePautaTest() {
+    setPautaTesting(true);
+    try {
+      const response = await fetch('/api/pauta/config/test', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Webhook da pauta testado com sucesso!');
+      } else {
+        toast.error(data.message || 'Falha ao testar webhook da pauta');
+      }
+
+      // Atualizar configuração para pegar novo status de teste
+      await fetchPautaConfig();
+    } catch (error: any) {
+      console.error('Error testing pauta webhook:', error);
+      toast.error(error.message || 'Erro ao testar webhook da pauta');
+    } finally {
+      setPautaTesting(false);
     }
   }
 
@@ -191,6 +279,99 @@ export default function BriefingConfigPage() {
                 )}
                 <span className="text-muted-foreground">
                   ({formatDateTime(config.last_test_at)})
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Webhook da Pauta */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Webhook da Pauta</CardTitle>
+          <CardDescription>
+            Notificações quando CS preencher formulário de pauta (Social Media / Tráfego)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="pauta_webhook_url">Webhook URL</Label>
+            <Input
+              id="pauta_webhook_url"
+              type="url"
+              placeholder="https://n8n.vendai.com/webhook/pauta"
+              value={pautaConfig.webhook_url || ''}
+              onChange={(e) => setPautaConfig({ ...pautaConfig, webhook_url: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pauta_webhook_secret">Secret (opcional)</Label>
+            <Input
+              id="pauta_webhook_secret"
+              type="text"
+              placeholder="seu-secret-aqui"
+              value={pautaConfig.webhook_secret || ''}
+              onChange={(e) => setPautaConfig({ ...pautaConfig, webhook_secret: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Enviado no header x-webhook-secret
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between border rounded-lg p-4">
+            <div>
+              <Label>Ativar</Label>
+              <p className="text-xs text-muted-foreground">
+                Webhook chamado ao receber pauta
+              </p>
+            </div>
+            <Switch
+              checked={pautaConfig.is_active || false}
+              onCheckedChange={(checked) => setPautaConfig({ ...pautaConfig, is_active: checked })}
+            />
+          </div>
+
+          <div className="border-t pt-4 space-y-4">
+            <div className="flex gap-2">
+              <Button onClick={handlePautaTest} disabled={pautaTesting || !pautaConfig.webhook_url} variant="outline">
+                {pautaTesting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Testando...
+                  </>
+                ) : (
+                  'Testar'
+                )}
+              </Button>
+              <Button onClick={handlePautaSave} disabled={pautaSaving}>
+                {pautaSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar'
+                )}
+              </Button>
+            </div>
+
+            {pautaConfig.last_test_at && (
+              <div className="flex items-center gap-2 text-sm">
+                {pautaConfig.last_test_status === 'success' ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-green-500">Último teste: Sucesso</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-red-500">Último teste: Falha</span>
+                  </>
+                )}
+                <span className="text-muted-foreground">
+                  ({formatDateTime(pautaConfig.last_test_at)})
                 </span>
               </div>
             )}
