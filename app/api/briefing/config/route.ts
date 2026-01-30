@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { webhook_url, webhook_secret, is_active } = body;
+    const { webhook_url, webhook_secret, is_active, uazapi_url, uazapi_token } = body;
 
     // Atualizar configuração
     const { data, error } = await serviceClient
@@ -80,6 +80,8 @@ export async function PATCH(request: NextRequest) {
         webhook_url,
         webhook_secret,
         is_active,
+        uazapi_url,
+        uazapi_token,
         updated_at: new Date().toISOString(),
       })
       .eq('id', 1)

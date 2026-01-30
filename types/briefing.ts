@@ -25,6 +25,8 @@ export interface BriefingConfig {
   webhook_url?: string;
   webhook_secret?: string;
   is_active: boolean;
+  uazapi_url?: string;
+  uazapi_token?: string;
   last_test_at?: string;
   last_test_status?: 'success' | 'failed';
   created_at: string;
