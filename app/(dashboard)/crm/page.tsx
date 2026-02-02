@@ -244,6 +244,7 @@ export default function CRMPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [formStep, setFormStep] = useState<'basico' | 'contato' | 'detalhes'>('basico');
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -470,6 +471,7 @@ export default function CRMPage() {
         cargo: '',
       });
     }
+    setFormStep('basico');
     setShowModal(true);
   };
 
@@ -478,13 +480,19 @@ export default function CRMPage() {
       toast.error('Nome da empresa é obrigatório');
       return;
     }
+    if (!formData.segment) {
+      toast.error('Segmento é obrigatório');
+      return;
+    }
 
     try {
       const supabase = createClient();
 
+      // Não enviar campos vazios para enums
       const leadData = {
         ...formData,
         company_id: user?.company_id,
+        cargo: formData.cargo || null, // Enviar null ao invés de string vazia
       };
 
       if (editingLead) {
@@ -1161,17 +1169,17 @@ export default function CRMPage() {
           <DialogHeader>
             <DialogTitle>{editingLead ? `Editar Lead: ${editingLead.company_name}` : 'Adicionar Lead'}</DialogTitle>
           </DialogHeader>
-          <Tabs defaultValue="basico" className="w-full">
+          <Tabs value={formStep} onValueChange={(value) => setFormStep(value as 'basico' | 'contato' | 'detalhes')} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basico">
+              <TabsTrigger value="basico" disabled>
                 <span className="sm:hidden">1</span>
                 <span className="hidden sm:inline">1. Informações Básicas</span>
               </TabsTrigger>
-              <TabsTrigger value="contato">
+              <TabsTrigger value="contato" disabled>
                 <span className="sm:hidden">2</span>
                 <span className="hidden sm:inline">2. Contato</span>
               </TabsTrigger>
-              <TabsTrigger value="detalhes">
+              <TabsTrigger value="detalhes" disabled>
                 <span className="sm:hidden">3</span>
                 <span className="hidden sm:inline">3. Detalhes</span>
               </TabsTrigger>
@@ -1358,13 +1366,48 @@ export default function CRMPage() {
             </TabsContent>
           </Tabs>
 
-          <DialogFooter className="gap-5">
+          <DialogFooter className="gap-2 sm:gap-5">
             <Button variant="outline" onClick={() => setShowModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveLead} className="bg-orange-500 hover:bg-orange-600">
-              {editingLead ? 'Atualizar' : 'Adicionar'}
-            </Button>
+            {formStep === 'basico' && (
+              <Button
+                onClick={() => {
+                  if (!formData.company_name.trim()) {
+                    toast.error('Nome da empresa é obrigatório');
+                    return;
+                  }
+                  if (!formData.segment) {
+                    toast.error('Segmento é obrigatório');
+                    return;
+                  }
+                  setFormStep('contato');
+                }}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                Próximo
+              </Button>
+            )}
+            {formStep === 'contato' && (
+              <>
+                <Button variant="outline" onClick={() => setFormStep('basico')}>
+                  Voltar
+                </Button>
+                <Button onClick={() => setFormStep('detalhes')} className="bg-orange-500 hover:bg-orange-600">
+                  Próximo
+                </Button>
+              </>
+            )}
+            {formStep === 'detalhes' && (
+              <>
+                <Button variant="outline" onClick={() => setFormStep('contato')}>
+                  Voltar
+                </Button>
+                <Button onClick={handleSaveLead} className="bg-orange-500 hover:bg-orange-600">
+                  {editingLead ? 'Atualizar' : 'Salvar'}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
