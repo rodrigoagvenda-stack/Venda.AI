@@ -264,10 +264,11 @@ export default function CRMPage() {
     email: '',
     priority: 'Média',
     status: 'Lead novo',
-    nivel_interesse: 'Morno',
+    nivel_interesse: 'Morno 🟡',
     import_source: 'Interno',
     project_value: 0,
     notes: '',
+    cargo: '',
   });
 
   const sensors = useSensors(
@@ -445,10 +446,11 @@ export default function CRMPage() {
         email: lead.email || '',
         priority: lead.priority || 'Média',
         status: lead.status || 'Lead novo',
-        nivel_interesse: lead.nivel_interesse || 'Morno',
+        nivel_interesse: lead.nivel_interesse || 'Morno 🟡',
         import_source: lead.import_source || 'Interno',
         project_value: lead.project_value || 0,
         notes: lead.notes || '',
+        cargo: lead.cargo || '',
       });
     } else {
       setEditingLead(null);
@@ -461,10 +463,11 @@ export default function CRMPage() {
         email: '',
         priority: 'Média',
         status: 'Lead novo',
-        nivel_interesse: 'Morno',
+        nivel_interesse: 'Morno 🟡',
         import_source: 'Interno',
         project_value: 0,
         notes: '',
+        cargo: '',
       });
     }
     setShowModal(true);
@@ -1186,12 +1189,25 @@ export default function CRMPage() {
               </div>
               <div>
                 <Label htmlFor="segment">Segmento *</Label>
-                <Input
-                  id="segment"
-                  value={formData.segment}
-                  onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
-                  placeholder="Ex: Saúde/Medicina, Tecnologia, etc."
-                />
+                <Select value={formData.segment} onValueChange={(value) => setFormData({ ...formData, segment: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o segmento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="E-commerce">E-commerce</SelectItem>
+                    <SelectItem value="Saúde/Medicina">Saúde/Medicina</SelectItem>
+                    <SelectItem value="Educação">Educação</SelectItem>
+                    <SelectItem value="Alimentação">Alimentação</SelectItem>
+                    <SelectItem value="Beleza/Estética">Beleza/Estética</SelectItem>
+                    <SelectItem value="Imobiliária">Imobiliária</SelectItem>
+                    <SelectItem value="Advocacia">Advocacia</SelectItem>
+                    <SelectItem value="Consultoria">Consultoria</SelectItem>
+                    <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+                    <SelectItem value="Moda/Fashion">Moda/Fashion</SelectItem>
+                    <SelectItem value="Arquitetura">Arquitetura</SelectItem>
+                    <SelectItem value="Outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="website">Site/Instagram</Label>
@@ -1215,6 +1231,21 @@ export default function CRMPage() {
                 />
               </div>
               <div>
+                <Label htmlFor="cargo">Cargo</Label>
+                <Select value={formData.cargo} onValueChange={(value) => setFormData({ ...formData, cargo: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Proprietário/Dono">Proprietário/Dono</SelectItem>
+                    <SelectItem value="Gerente Comercial">Gerente Comercial</SelectItem>
+                    <SelectItem value="Vendedor">Vendedor</SelectItem>
+                    <SelectItem value="Representante Comercial">Representante Comercial</SelectItem>
+                    <SelectItem value="Consultor de Vendas">Consultor de Vendas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label htmlFor="whatsapp">WhatsApp</Label>
                 <Input
                   id="whatsapp"
@@ -1236,6 +1267,38 @@ export default function CRMPage() {
             </TabsContent>
 
             <TabsContent value="detalhes" className="space-y-4 mt-4">
+              <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="status">Estágio do Lead *</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Lead novo">Lead novo</SelectItem>
+                      <SelectItem value="Em contato">Em contato</SelectItem>
+                      <SelectItem value="Interessado">Interessado</SelectItem>
+                      <SelectItem value="Proposta enviada">Proposta enviada</SelectItem>
+                      <SelectItem value="Fechado">Fechado</SelectItem>
+                      <SelectItem value="Perdido">Perdido</SelectItem>
+                      <SelectItem value="Remarketing">Remarketing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="nivel_interesse">Status do Lead *</Label>
+                  <Select value={formData.nivel_interesse} onValueChange={(value) => setFormData({ ...formData, nivel_interesse: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Quente 🔥">Quente 🔥</SelectItem>
+                      <SelectItem value="Morno 🟡">Morno 🟡</SelectItem>
+                      <SelectItem value="Frio ❄️">Frio ❄️</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="priority">Prioridade *</Label>
