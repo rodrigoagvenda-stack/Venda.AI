@@ -265,7 +265,7 @@ export default function CRMPage() {
     priority: 'Média',
     status: 'Lead novo',
     nivel_interesse: 'Morno',
-    import_source: 'Manual',
+    import_source: 'Interno',
     project_value: 0,
     notes: '',
   });
@@ -446,7 +446,7 @@ export default function CRMPage() {
         priority: lead.priority || 'Média',
         status: lead.status || 'Lead novo',
         nivel_interesse: lead.nivel_interesse || 'Morno',
-        import_source: lead.import_source || 'Manual',
+        import_source: lead.import_source || 'Interno',
         project_value: lead.project_value || 0,
         notes: lead.notes || '',
       });
@@ -462,7 +462,7 @@ export default function CRMPage() {
         priority: 'Média',
         status: 'Lead novo',
         nivel_interesse: 'Morno',
-        import_source: 'Manual',
+        import_source: 'Interno',
         project_value: 0,
         notes: '',
       });
@@ -1257,10 +1257,17 @@ export default function CRMPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Manual">Manual</SelectItem>
-                      <SelectItem value="Google Maps">Google Maps</SelectItem>
+                      <SelectItem value="Interno">Interno</SelectItem>
                       <SelectItem value="PEG">PEG</SelectItem>
+                      <SelectItem value="Linkedin">Linkedin</SelectItem>
+                      <SelectItem value="Meta Ads">Meta Ads</SelectItem>
+                      <SelectItem value="Google Ads">Google Ads</SelectItem>
+                      <SelectItem value="Site/Landing Page">Site/Landing Page</SelectItem>
                       <SelectItem value="Indicação">Indicação</SelectItem>
+                      <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                      <SelectItem value="TikTok Ads">TikTok Ads</SelectItem>
+                      <SelectItem value="E-mail Marketing">E-mail Marketing</SelectItem>
+                      <SelectItem value="Evento/Feira">Evento/Feira</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
