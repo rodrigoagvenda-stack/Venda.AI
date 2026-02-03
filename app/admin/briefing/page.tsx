@@ -22,26 +22,55 @@ import { BriefingResponse } from '@/types/briefing';
 import { PautaResponse } from '@/types/pauta';
 import { formatDateTime } from '@/lib/utils/format';
 import { SimplePagination } from '@/components/ui/pagination-simple';
+import { Building2 } from 'lucide-react';
+
+interface ClienteResponse {
+  id: number;
+  nome_empresa: string;
+  segmento?: string;
+  contexto_negocio: string;
+  cs_responsavel: string;
+  cs_whatsapp: string;
+  ceo_nome?: string;
+  ceo_whatsapp?: string;
+  gerente_nome?: string;
+  gerente_whatsapp?: string;
+  tom_comunicacao: string;
+  servicos_prestados: string;
+  informacoes_projeto: string;
+  prompt_especifico?: string;
+  estruturas_pautas?: string[];
+  webhook_sent: boolean;
+  webhook_sent_at?: string;
+  submitted_at: string;
+}
 
 export default function BriefingListPage() {
   const [responses, setResponses] = useState<BriefingResponse[]>([]);
   const [pautas, setPautas] = useState<PautaResponse[]>([]);
+  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [searchPauta, setSearchPauta] = useState('');
+  const [searchCliente, setSearchCliente] = useState('');
   const [total, setTotal] = useState(0);
   const [totalPautas, setTotalPautas] = useState(0);
+  const [totalClientes, setTotalClientes] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPagePauta, setCurrentPagePauta] = useState(1);
+  const [currentPageCliente, setCurrentPageCliente] = useState(1);
   const itemsPerPage = 10;
 
   // Modal states
   const [viewingPauta, setViewingPauta] = useState<PautaResponse | null>(null);
+  const [viewingCliente, setViewingCliente] = useState<ClienteResponse | null>(null);
   const [deletingBriefing, setDeletingBriefing] = useState<number | null>(null);
   const [deletingPauta, setDeletingPauta] = useState<number | null>(null);
+  const [deletingCliente, setDeletingCliente] = useState<number | null>(null);
 
   const formUrl = typeof window !== 'undefined' ? `${window.location.origin}/brief` : '';
   const pautaUrl = typeof window !== 'undefined' ? `${window.location.origin}/pauta` : '';
+  const clienteUrl = typeof window !== 'undefined' ? `${window.location.origin}/cliente` : '';
 
   useEffect(() => {
     fetchResponses();
@@ -50,6 +79,10 @@ export default function BriefingListPage() {
   useEffect(() => {
     fetchPautas();
   }, [searchPauta]);
+
+  useEffect(() => {
+    fetchClientes();
+  }, [searchCliente]);
 
   async function fetchResponses() {
     try {
@@ -88,6 +121,23 @@ export default function BriefingListPage() {
     }
   }
 
+  async function fetchClientes() {
+    try {
+      const params = new URLSearchParams();
+      if (searchCliente) params.append('search', searchCliente);
+
+      const response = await fetch(`/api/cliente/responses?${params}`);
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      setClientes(data.data || []);
+      setTotalClientes(data.total || 0);
+    } catch (error: any) {
+      console.error('Error fetching clientes:', error);
+    }
+  }
+
   async function handleDeleteBriefing(id: number) {
     try {
       const response = await fetch(`/api/briefing/responses/${id}`, {
@@ -123,6 +173,24 @@ export default function BriefingListPage() {
     }
   }
 
+  async function handleDeleteCliente(id: number) {
+    try {
+      const response = await fetch(`/api/cliente/responses/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      toast.success('Cliente excluído com sucesso');
+      setDeletingCliente(null);
+      setViewingCliente(null);
+      fetchClientes();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir cliente');
+    }
+  }
+
   const copyFormUrl = () => {
     navigator.clipboard.writeText(formUrl);
     toast.success('Link copiado!');
@@ -138,12 +206,20 @@ export default function BriefingListPage() {
   const startIndexPauta = (currentPagePauta - 1) * itemsPerPage;
   const paginatedPautas = pautas.slice(startIndexPauta, startIndexPauta + itemsPerPage);
 
+  // Pagination Cliente
+  const totalPagesCliente = Math.ceil(clientes.length / itemsPerPage);
+  const startIndexCliente = (currentPageCliente - 1) * itemsPerPage;
+  const paginatedClientes = clientes.slice(startIndexCliente, startIndexCliente + itemsPerPage);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
   useEffect(() => {
     setCurrentPagePauta(1);
   }, [searchPauta]);
+  useEffect(() => {
+    setCurrentPageCliente(1);
+  }, [searchCliente]);
 
   if (loading) {
     return (
@@ -171,7 +247,7 @@ export default function BriefingListPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -209,6 +285,35 @@ export default function BriefingListPage() {
               <Button
                 onClick={() => {
                   navigator.clipboard.writeText(pautaUrl);
+                  toast.success('Link copiado!');
+                }}
+                variant="outline"
+                className="sm:w-auto"
+              >
+                <Copy className="h-4 w-4 sm:mr-0" />
+                <span className="sm:hidden ml-2">Copiar Link</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Link do Cliente</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Cadastro de clientes/empresas
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-col sm:flex-row">
+              <Input value={clienteUrl} readOnly className="font-mono text-xs sm:text-sm flex-1" />
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(clienteUrl);
                   toast.success('Link copiado!');
                 }}
                 variant="outline"
@@ -320,6 +425,100 @@ export default function BriefingListPage() {
             totalPages={totalPagesPauta}
             onPageChange={setCurrentPagePauta}
             totalItems={pautas.length}
+            itemsPerPage={itemsPerPage}
+          />
+        )}
+      </Card>
+
+      {/* CLIENTES */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary" />
+              Clientes ({totalClientes})
+            </CardTitle>
+            <Input
+              placeholder="Buscar por empresa ou CS..."
+              value={searchCliente}
+              onChange={(e) => setSearchCliente(e.target.value)}
+              className="w-full sm:max-w-sm"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {clientes.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Nenhum cliente cadastrado</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3 text-sm">Empresa</th>
+                    <th className="text-left p-3 text-sm">Segmento</th>
+                    <th className="text-left p-3 text-sm">CS</th>
+                    <th className="text-left p-3 text-sm">Tom</th>
+                    <th className="text-left p-3 text-sm">Data</th>
+                    <th className="text-left p-3 text-sm">Webhook</th>
+                    <th className="text-left p-3 text-sm">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedClientes.map((cliente) => (
+                    <tr key={cliente.id} className="border-b hover:bg-accent">
+                      <td className="p-3 font-medium text-sm">{cliente.nome_empresa}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{cliente.segmento || '-'}</td>
+                      <td className="p-3 text-sm">{cliente.cs_responsavel}</td>
+                      <td className="p-3 text-xs">
+                        <span className="px-2 py-1 rounded bg-primary/10 text-primary">
+                          {cliente.tom_comunicacao}
+                        </span>
+                      </td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {formatDateTime(cliente.submitted_at)}
+                      </td>
+                      <td className="p-3">
+                        {cliente.webhook_sent ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-gray-500" />
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewingCliente(cliente)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingCliente(cliente.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+        {clientes.length > 0 && (
+          <SimplePagination
+            currentPage={currentPageCliente}
+            totalPages={totalPagesCliente}
+            onPageChange={setCurrentPageCliente}
+            totalItems={clientes.length}
             itemsPerPage={itemsPerPage}
           />
         )}
@@ -616,6 +815,165 @@ export default function BriefingListPage() {
                 variant="destructive"
                 size="sm"
                 onClick={() => handleDeletePauta(deletingPauta)}
+              >
+                Excluir
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: View Cliente */}
+      {viewingCliente && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Detalhes do Cliente</h2>
+              <Button variant="ghost" size="sm" onClick={() => setViewingCliente(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Empresa</p>
+                  <p className="font-medium">{viewingCliente.nome_empresa}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Segmento</p>
+                  <p className="font-medium">{viewingCliente.segmento || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">CS Responsável</p>
+                  <p className="font-medium">{viewingCliente.cs_responsavel}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">WhatsApp CS</p>
+                  <p className="font-medium">{viewingCliente.cs_whatsapp}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tom de Comunicação</p>
+                  <p className="font-medium">{viewingCliente.tom_comunicacao}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Data</p>
+                  <p className="font-medium">{formatDateTime(viewingCliente.submitted_at)}</p>
+                </div>
+              </div>
+
+              {(viewingCliente.ceo_nome || viewingCliente.gerente_nome) && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground mb-2">Contatos Adicionais</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {viewingCliente.ceo_nome && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">CEO</p>
+                        <p className="font-medium">{viewingCliente.ceo_nome}</p>
+                        {viewingCliente.ceo_whatsapp && (
+                          <p className="text-sm text-muted-foreground">{viewingCliente.ceo_whatsapp}</p>
+                        )}
+                      </div>
+                    )}
+                    {viewingCliente.gerente_nome && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">Gerente</p>
+                        <p className="font-medium">{viewingCliente.gerente_nome}</p>
+                        {viewingCliente.gerente_whatsapp && (
+                          <p className="text-sm text-muted-foreground">{viewingCliente.gerente_whatsapp}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs text-muted-foreground">Contexto do Negócio</p>
+                <p className="text-sm whitespace-pre-wrap">{viewingCliente.contexto_negocio}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Serviços Prestados</p>
+                <p className="text-sm whitespace-pre-wrap">{viewingCliente.servicos_prestados}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Informações do Projeto</p>
+                <p className="text-sm whitespace-pre-wrap">{viewingCliente.informacoes_projeto}</p>
+              </div>
+
+              {viewingCliente.prompt_especifico && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Prompt Específico</p>
+                  <p className="text-sm whitespace-pre-wrap">{viewingCliente.prompt_especifico}</p>
+                </div>
+              )}
+
+              {viewingCliente.estruturas_pautas && viewingCliente.estruturas_pautas.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Estruturas de Pauta</p>
+                  <div className="flex flex-wrap gap-1">
+                    {viewingCliente.estruturas_pautas.map((est, i) => (
+                      <span key={i} className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+                        {est}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground">Webhook:</p>
+                {viewingCliente.webhook_sent ? (
+                  <span className="flex items-center gap-1 text-green-500 text-xs">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Enviado em {formatDateTime(viewingCliente.webhook_sent_at || '')}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-gray-500 text-xs">
+                    <XCircle className="h-3 w-3" />
+                    Não enviado
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeletingCliente(viewingCliente.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setViewingCliente(null)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm Delete Cliente */}
+      {deletingCliente && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold mb-2">Excluir Cliente</h2>
+            <p className="text-muted-foreground text-sm mb-4">
+              Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeletingCliente(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDeleteCliente(deletingCliente)}
               >
                 Excluir
               </Button>

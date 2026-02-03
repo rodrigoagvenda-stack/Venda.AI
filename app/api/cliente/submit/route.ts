@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,31 +29,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createServiceClient();
 
-    // Fetch webhook config from database
-    const { data: config, error: configError } = await supabase
-      .from('cliente_config')
-      .select('*')
-      .single();
-
-    if (configError && configError.code !== 'PGRST116') {
-      console.error('Error fetching cliente config:', configError);
-      return NextResponse.json(
-        { success: false, message: 'Erro ao buscar configuracao' },
-        { status: 500 }
-      );
-    }
-
-    if (!config || !config.webhook_url || !config.is_active) {
-      return NextResponse.json(
-        { success: false, message: 'Webhook de cliente nao configurado ou inativo' },
-        { status: 400 }
-      );
-    }
-
-    // Build payload
-    const payload = {
+    // Prepare data for insertion
+    const insertData = {
       nome_empresa,
       segmento: segmento || null,
       contexto_negocio,
@@ -68,43 +47,62 @@ export async function POST(request: NextRequest) {
       informacoes_projeto,
       prompt_especifico: prompt_especifico || null,
       estruturas_pautas: estruturas_pautas || [],
-      timestamp: new Date().toISOString(),
     };
 
-    // Build headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    // 1. Save to database
+    const { data: response, error: insertError } = await supabase
+      .from('cliente_responses')
+      .insert([insertData])
+      .select()
+      .single();
 
-    // Add webhook secret if configured
-    if (config.webhook_secret) {
-      headers['x-webhook-secret'] = config.webhook_secret;
+    if (insertError) {
+      console.error('Error inserting cliente:', insertError);
+      throw insertError;
     }
 
-    // Send to webhook
-    const response = await fetch(config.webhook_url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Webhook error:', response.status, errorText);
-      return NextResponse.json(
-        { success: false, message: 'Erro ao enviar dados para o webhook' },
-        { status: 500 }
-      );
-    }
-
-    // Update last_used_at in config
-    await supabase
+    // 2. Fetch webhook config
+    const { data: config, error: configError } = await supabase
       .from('cliente_config')
-      .update({ last_used_at: new Date().toISOString() })
-      .eq('id', config.id);
+      .select('webhook_url, webhook_secret, is_active')
+      .single();
+
+    if (!configError && config?.is_active && config?.webhook_url) {
+      // 3. Call webhook
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (config.webhook_secret) {
+          headers['x-webhook-secret'] = config.webhook_secret;
+        }
+
+        await fetch(config.webhook_url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            event: 'cliente_created',
+            response_id: response.id,
+            submitted_at: response.submitted_at,
+            ...insertData,
+          }),
+        });
+
+        // Mark as sent
+        await supabase
+          .from('cliente_responses')
+          .update({ webhook_sent: true, webhook_sent_at: new Date().toISOString() })
+          .eq('id', response.id);
+      } catch (webhookError) {
+        console.error('Webhook call failed:', webhookError);
+        // Don't fail the request if webhook fails
+      }
+    }
 
     return NextResponse.json({
       success: true,
+      response_id: response.id,
       message: 'Cliente cadastrado com sucesso!',
     });
   } catch (error: any) {
