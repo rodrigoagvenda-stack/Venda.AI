@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Link2, Zap, FileText, Users, Loader2, MapPin } from 'lucide-react';
+import { Link2, Loader2, MapPin } from 'lucide-react';
+import { AnimatedHeadline } from '@/components/prospect/AnimatedHeadline';
 
 const LEAD_LIMITS = [10, 25, 50, 100, 200, 500];
 
@@ -188,15 +189,8 @@ export default function ProspectAIPage() {
       <div className="w-full max-w-4xl space-y-8 md:space-y-12">
         {/* Header */}
         <div className="text-center space-y-6 md:space-y-8">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            prospect<span className="text-primary">.</span>AI
-          </h1>
-          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">
-            O jeito mais <span className="text-orange-500">rápido</span> de transformar
-            <br className="hidden md:block" />
-            buscas em oportunidades reais.
-          </h2>
-          <p className="text-base md:text-lg text-muted-foreground">
+          <AnimatedHeadline />
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Transforme qualquer busca do Google Maps em leads qualificados.
           </p>
         </div>
@@ -346,35 +340,6 @@ export default function ProspectAIPage() {
           )}
         </Card>
 
-        {/* Benefits */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-          <Card className="p-4 md:p-6 space-y-3 bg-card/50 border-border/50">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Zap className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-              Extrai dados de Google Maps automaticamente com IA em segundos.
-            </p>
-          </Card>
-
-          <Card className="p-4 md:p-6 space-y-3 bg-card/50 border-border/50">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-              Captura nome, telefone, email, endereço e redes sociais em um clique.
-            </p>
-          </Card>
-
-          <Card className="p-4 md:p-6 space-y-3 bg-card/50 border-border/50 sm:col-span-2 md:col-span-1">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
-              <Users className="h-5 w-5 md:h-6 md:w-6 text-orange-500" />
-            </div>
-            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-              Leads organizados e qualificados direto no seu pipeline de vendas.
-            </p>
-          </Card>
-        </div>
       </div>
     </div>
   );

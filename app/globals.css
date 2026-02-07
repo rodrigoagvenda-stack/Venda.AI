@@ -24,8 +24,8 @@
     --input: 0 0% 89.8%;
     --ring: 36 85% 56%;
     --radius: 0.5rem;
-    --chart-1: 36 85% 56%; /* #EEA130 - leads/fechados */
-    --chart-2: 36 85% 56%; /* #EEA130 - leads/fechados */
+    --chart-1: 36 85% 56%; /* #EEA130 - leads */
+    --chart-2: 0 0% 10%; /* #191919 - fechados */
   }
 
   .dark {
@@ -48,8 +48,8 @@
     --border: 0 0% 10%; /* Bordas muito sutis */
     --input: 0 0% 8%;
     --ring: 36 85% 56%;
-    --chart-1: 36 85% 56%; /* #EEA130 - leads/fechados */
-    --chart-2: 36 85% 56%; /* #EEA130 - leads/fechados */
+    --chart-1: 36 85% 56%; /* #EEA130 - leads */
+    --chart-2: 0 0% 10%; /* #191919 - fechados */
   }
 }
 
@@ -84,7 +84,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 }
 

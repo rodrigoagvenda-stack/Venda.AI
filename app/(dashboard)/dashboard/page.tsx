@@ -367,9 +367,9 @@ export default function DashboardPage() {
 
   // Dados do donut de conversão
   const conversionData = [
-    { name: 'Fechados', value: fechados, color: '#10b981' },
-    { name: 'Perdidos', value: perdidos, color: '#ef4444' },
-    { name: 'Em andamento', value: emAtendimento, color: 'hsl(var(--primary))' },
+    { name: 'Fechados', value: fechados, color: '#EEA130' },
+    { name: 'Perdidos', value: perdidos, color: '#191919' },
+    { name: 'Em andamento', value: emAtendimento, color: '#EEA130' },
   ].filter(item => item.value > 0); // Remove itens com valor 0 para não aparecer no gráfico
 
   // Dados do funil
