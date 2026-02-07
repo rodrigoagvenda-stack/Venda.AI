@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 93%; /* #EDEDED */
     --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
+    --card: 0 0% 95.3%; /* #F3F3F3 */
     --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
+    --popover: 0 0% 95.3%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 36 95% 50%; /* Laranja */
+    --primary: 36 85% 56%; /* #EEA130 */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -22,18 +22,20 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 36 95% 50%;
+    --ring: 36 85% 56%;
     --radius: 0.5rem;
+    --chart-1: 36 85% 56%; /* #EEA130 - leads/fechados */
+    --chart-2: 36 85% 56%; /* #EEA130 - leads/fechados */
   }
 
   .dark {
-    --background: 0 0% 0%; /* Preto puro */
+    --background: 0 0% 4.7%; /* #0C0C0C */
     --foreground: 0 0% 98%;
-    --card: 0 0% 4%; /* Cards cinza muito escuro */
+    --card: 0 0% 6.3%; /* #101010 */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 4%;
+    --popover: 0 0% 6.3%;
     --popover-foreground: 0 0% 98%;
-    --primary: 29 100% 50%; /* Laranja #ff9500 */
+    --primary: 36 85% 56%; /* #EEA130 */
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 8%; /* Cinza escuro */
     --secondary-foreground: 0 0% 98%;
@@ -45,7 +47,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 10%; /* Bordas muito sutis */
     --input: 0 0% 8%;
-    --ring: 29 100% 50%;
+    --ring: 36 85% 56%;
+    --chart-1: 36 85% 56%; /* #EEA130 - leads/fechados */
+    --chart-2: 36 85% 56%; /* #EEA130 - leads/fechados */
   }
 }
 

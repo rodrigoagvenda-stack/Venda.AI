@@ -1242,15 +1242,11 @@ export default function CRMPage() {
               ))}
             </div>
             {filteredLeads.length > 0 && (
-              <Card>
-                <SimplePagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  totalItems={filteredLeads.length}
-                  itemsPerPage={itemsPerPage}
-                />
-              </Card>
+              <SimplePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             )}
           </div>
         </>
