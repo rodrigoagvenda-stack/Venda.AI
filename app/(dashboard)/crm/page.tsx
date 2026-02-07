@@ -183,11 +183,13 @@ function DroppableColumn({
   id,
   title,
   count,
+  totalValue,
   children,
 }: {
   id: string;
   title: string;
   count: number;
+  totalValue: number;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -215,12 +217,17 @@ function DroppableColumn({
   return (
     <div className="flex flex-col h-full">
       <div className={`bg-card border-2 border-b-0 ${getColumnColor()} rounded-t-xl p-4 shadow-sm`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <h3 className="font-bold text-sm text-foreground">{title}</h3>
           <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary">
             <span className="text-xs font-bold">{count}</span>
           </div>
         </div>
+        {totalValue > 0 && (
+          <div className="text-xs text-muted-foreground font-semibold">
+            R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        )}
       </div>
       <div
         ref={setNodeRef}
@@ -254,6 +261,10 @@ export default function CRMPage() {
   const [overId, setOverId] = useState<string | number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Seleção em massa
+  const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -542,6 +553,44 @@ export default function CRMPage() {
     }
   };
 
+  // Funções de seleção em massa
+  const handleSelectLead = (leadId: number) => {
+    setSelectedLeads(prev =>
+      prev.includes(leadId)
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedLeads.length === paginatedLeads.length) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(paginatedLeads.map(lead => lead.id));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedLeads.length === 0) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', selectedLeads);
+
+      if (error) throw error;
+      toast.success(`${selectedLeads.length} lead(s) deletado(s) com sucesso!`);
+      setSelectedLeads([]);
+      setShowDeleteConfirmation(false);
+      fetchLeads();
+    } catch (error) {
+      console.error('Error deleting leads:', error);
+      toast.error('Erro ao deletar leads');
+    }
+  };
+
   const exportToCSV = () => {
     try {
       // Cabeçalhos do CSV
@@ -623,6 +672,12 @@ export default function CRMPage() {
 
   const getLeadsByStatus = (status: string) => {
     return filteredLeads.filter((lead) => lead.status === status);
+  };
+
+  const getTotalValueByStatus = (status: string) => {
+    return filteredLeads
+      .filter((lead) => lead.status === status)
+      .reduce((sum, lead) => sum + (lead.project_value || 0), 0);
   };
 
   // Filtros
@@ -762,6 +817,16 @@ export default function CRMPage() {
           </div>
         </div>
         <div className="flex gap-2 justify-end">
+          {selectedLeads.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirmation(true)}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Deletar {selectedLeads.length} selecionado(s)</span>
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={exportToCSV}
@@ -810,12 +875,14 @@ export default function CRMPage() {
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {columns.map((column) => {
               const columnLeads = getLeadsByStatus(column.id);
+              const columnTotalValue = getTotalValueByStatus(column.id);
               return (
                 <DroppableColumn
                   key={column.id}
                   id={`column-${column.id}`}
                   title={column.title}
                   count={columnLeads.length}
+                  totalValue={columnTotalValue}
                 >
                   <SortableContext items={columnLeads.map(l => l.id)} strategy={verticalListSortingStrategy}>
                     {columnLeads.map((lead) => (
@@ -994,6 +1061,14 @@ export default function CRMPage() {
                 <table className="w-full">
                   <thead className="bg-secondary/50">
                     <tr>
+                      <th className="p-4 w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                        />
+                      </th>
                       <th className="text-left p-4 font-semibold text-sm">NOME DA EMPRESA</th>
                       <th className="text-left p-4 font-semibold text-sm">SEGMENTO</th>
                       <th className="text-left p-4 font-semibold text-sm">STATUS</th>
@@ -1013,6 +1088,14 @@ export default function CRMPage() {
                           index % 2 === 0 ? 'bg-background' : 'bg-secondary/20'
                         }`}
                       >
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.includes(lead.id)}
+                            onChange={() => handleSelectLead(lead.id)}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          />
+                        </td>
                         <td className="p-4">
                           <div>
                             <p className="font-medium text-sm">{lead.company_name}</p>
@@ -1412,7 +1495,7 @@ export default function CRMPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Alert Dialog para Delete */}
+      {/* Alert Dialog para Delete Individual */}
       <AlertDialog open={!!deletingLead} onOpenChange={() => setDeletingLead(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1433,6 +1516,29 @@ export default function CRMPage() {
               className="bg-red-500 hover:bg-red-600"
             >
               Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert Dialog para Delete em Massa */}
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar Leads Selecionados</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar <strong>{selectedLeads.length} lead(s)</strong> selecionado(s)?
+              <br /><br />
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteConfirmation(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSelected}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Deletar {selectedLeads.length} Lead(s)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

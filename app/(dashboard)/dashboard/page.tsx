@@ -13,8 +13,8 @@ interface DateRange {
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { FilterButtons, FilterPeriod } from '@/components/dashboard/FilterButtons';
 import { DateRangePicker } from '@/components/dashboard/DateRangePicker';
-import { PerformanceChart } from '@/components/dashboard/PerformanceChart';
-import { ConversionDonut } from '@/components/dashboard/ConversionDonut';
+import { BarChartCustom } from '@/components/dashboard/BarChartCustom';
+import { PieChartInteractive } from '@/components/dashboard/PieChartInteractive';
 import { SalesFunnel } from '@/components/dashboard/SalesFunnel';
 
 interface Lead {
@@ -78,11 +78,20 @@ export default function DashboardPage() {
     if (selectedPeriod === 'custom') {
       if (dateRange?.from && dateRange?.to) {
         filtered = leads.filter((lead) => {
-          const leadDate = new Date(lead.created_at);
-          return isWithinInterval(leadDate, {
+          const createdDate = new Date(lead.created_at);
+          const updatedDate = new Date(lead.updated_at);
+
+          // Incluir lead se foi criado OU atualizado (fechado) no período
+          const createdInPeriod = isWithinInterval(createdDate, {
             start: dateRange.from!,
             end: endOfDay(dateRange.to!),
           });
+          const updatedInPeriod = isWithinInterval(updatedDate, {
+            start: dateRange.from!,
+            end: endOfDay(dateRange.to!),
+          });
+
+          return createdInPeriod || updatedInPeriod;
         });
       }
     } else {
@@ -97,8 +106,11 @@ export default function DashboardPage() {
 
       if (periodStart) {
         filtered = leads.filter((lead) => {
-          const leadDate = new Date(lead.created_at);
-          return leadDate >= periodStart;
+          const createdDate = new Date(lead.created_at);
+          const updatedDate = new Date(lead.updated_at);
+
+          // Incluir lead se foi criado OU atualizado (fechado) no período
+          return createdDate >= periodStart || updatedDate >= periodStart;
         });
       }
     }
@@ -119,12 +131,19 @@ export default function DashboardPage() {
   // Métricas
   const totalLeads = filteredLeads.length;
   const novosLeads = filteredLeads.filter((l) => l.status === 'Lead novo').length;
-  const emAtendimento = filteredLeads.filter((l) => l.status === 'Em contato').length;
+  const emAtendimento = filteredLeads.filter((l) =>
+    l.status !== 'Fechado' && l.status !== 'Perdido'
+  ).length;
   const fechados = filteredLeads.filter((l) => l.status === 'Fechado').length;
+  const perdidos = filteredLeads.filter((l) => l.status === 'Perdido').length;
   const faturamento = filteredLeads
     .filter((l) => l.status === 'Fechado')
     .reduce((sum, l) => sum + (l.project_value || 0), 0);
-  const taxaConversao = totalLeads > 0 ? ((fechados / totalLeads) * 100).toFixed(1) : '0.0';
+
+  // Taxa de conversão: leads fechados / (leads fechados + perdidos)
+  // Isso ignora leads que ainda estão em andamento
+  const leadsFinalizados = fechados + perdidos;
+  const taxaConversao = leadsFinalizados > 0 ? ((fechados / leadsFinalizados) * 100).toFixed(1) : '0.0';
 
   // Dados do gráfico de performance - ADAPTATIVO por período
   const generatePerformanceData = () => {
@@ -133,16 +152,29 @@ export default function DashboardPage() {
     switch (selectedPeriod) {
       case 'today': {
         // HOJE: Mostrar 24 horas (0h-23h)
+        const today = startOfDay(now);
         return Array.from({ length: 24 }, (_, i) => {
-          const hourLeads = filteredLeads.filter((lead) => {
-            const leadDate = new Date(lead.created_at);
-            return leadDate.getHours() === i;
+          const hourStart = new Date(today);
+          hourStart.setHours(i, 0, 0, 0);
+          const hourEnd = new Date(today);
+          hourEnd.setHours(i, 59, 59, 999);
+
+          // Leads criados nesta hora
+          const leadsCreated = filteredLeads.filter((lead) => {
+            const createdDate = new Date(lead.created_at);
+            return createdDate >= hourStart && createdDate <= hourEnd;
+          });
+
+          // Leads fechados nesta hora (usar updated_at)
+          const leadsClosed = filteredLeads.filter((lead) => {
+            const updatedDate = new Date(lead.updated_at);
+            return lead.status === 'Fechado' && updatedDate >= hourStart && updatedDate <= hourEnd;
           });
 
           return {
             name: `${i}h`,
-            leads: hourLeads.length,
-            fechados: hourLeads.filter((l) => l.status === 'Fechado').length,
+            leads: leadsCreated.length,
+            fechados: leadsClosed.length,
           };
         });
       }
@@ -152,17 +184,26 @@ export default function DashboardPage() {
         return Array.from({ length: 7 }, (_, i) => {
           const date = new Date(now);
           date.setDate(date.getDate() - (6 - i));
+          const dayStart = startOfDay(date);
+          const dayEnd = endOfDay(date);
           const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
 
-          const dayLeads = filteredLeads.filter((lead) => {
-            const leadDate = new Date(lead.created_at);
-            return leadDate.toDateString() === date.toDateString();
+          // Leads criados neste dia
+          const leadsCreated = filteredLeads.filter((lead) => {
+            const createdDate = new Date(lead.created_at);
+            return createdDate >= dayStart && createdDate <= dayEnd;
+          });
+
+          // Leads fechados neste dia (usar updated_at)
+          const leadsClosed = filteredLeads.filter((lead) => {
+            const updatedDate = new Date(lead.updated_at);
+            return lead.status === 'Fechado' && updatedDate >= dayStart && updatedDate <= dayEnd;
           });
 
           return {
             name: dayName,
-            leads: dayLeads.length,
-            fechados: dayLeads.filter((l) => l.status === 'Fechado').length,
+            leads: leadsCreated.length,
+            fechados: leadsClosed.length,
           };
         });
       }
@@ -177,16 +218,24 @@ export default function DashboardPage() {
           const weekStart = new Date(d);
           const weekEnd = new Date(d);
           weekEnd.setDate(weekEnd.getDate() + 6);
+          weekEnd.setHours(23, 59, 59, 999);
 
-          const weekLeads = filteredLeads.filter((lead) => {
-            const leadDate = new Date(lead.created_at);
-            return leadDate >= weekStart && leadDate <= weekEnd;
+          // Leads criados nesta semana
+          const leadsCreated = filteredLeads.filter((lead) => {
+            const createdDate = new Date(lead.created_at);
+            return createdDate >= weekStart && createdDate <= weekEnd;
+          });
+
+          // Leads fechados nesta semana (usar updated_at)
+          const leadsClosed = filteredLeads.filter((lead) => {
+            const updatedDate = new Date(lead.updated_at);
+            return lead.status === 'Fechado' && updatedDate >= weekStart && updatedDate <= weekEnd;
           });
 
           weeks.push({
             name: `Sem ${weekNum}`,
-            leads: weekLeads.length,
-            fechados: weekLeads.filter((l) => l.status === 'Fechado').length,
+            leads: leadsCreated.length,
+            fechados: leadsClosed.length,
           });
 
           d.setDate(d.getDate() + 7);
@@ -199,18 +248,28 @@ export default function DashboardPage() {
       case 'year': {
         // ANO: Mostrar 12 meses
         return Array.from({ length: 12 }, (_, i) => {
-          const monthDate = new Date(now.getFullYear(), i, 1);
-          const monthName = monthDate.toLocaleDateString('pt-BR', { month: 'short' });
+          const monthStart = new Date(now.getFullYear(), i, 1);
+          const monthEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59, 999);
+          const monthName = monthStart.toLocaleDateString('pt-BR', { month: 'short' });
 
-          const monthLeads = filteredLeads.filter((lead) => {
-            const leadDate = new Date(lead.created_at);
-            return leadDate.getMonth() === i && leadDate.getFullYear() === now.getFullYear();
+          // Leads criados neste mês
+          const leadsCreated = filteredLeads.filter((lead) => {
+            const createdDate = new Date(lead.created_at);
+            return createdDate.getMonth() === i && createdDate.getFullYear() === now.getFullYear();
+          });
+
+          // Leads fechados neste mês (usar updated_at)
+          const leadsClosed = filteredLeads.filter((lead) => {
+            const updatedDate = new Date(lead.updated_at);
+            return lead.status === 'Fechado' &&
+              updatedDate.getMonth() === i &&
+              updatedDate.getFullYear() === now.getFullYear();
           });
 
           return {
             name: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-            leads: monthLeads.length,
-            fechados: monthLeads.filter((l) => l.status === 'Fechado').length,
+            leads: leadsCreated.length,
+            fechados: leadsClosed.length,
           };
         });
       }
@@ -229,17 +288,26 @@ export default function DashboardPage() {
           return Array.from({ length: diffDays + 1 }, (_, i) => {
             const date = new Date(dateRange.from!);
             date.setDate(date.getDate() + i);
+            const dayStart = startOfDay(date);
+            const dayEnd = endOfDay(date);
             const dayName = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
-            const dayLeads = filteredLeads.filter((lead) => {
-              const leadDate = new Date(lead.created_at);
-              return leadDate.toDateString() === date.toDateString();
+            // Leads criados neste dia
+            const leadsCreated = filteredLeads.filter((lead) => {
+              const createdDate = new Date(lead.created_at);
+              return createdDate >= dayStart && createdDate <= dayEnd;
+            });
+
+            // Leads fechados neste dia (usar updated_at)
+            const leadsClosed = filteredLeads.filter((lead) => {
+              const updatedDate = new Date(lead.updated_at);
+              return lead.status === 'Fechado' && updatedDate >= dayStart && updatedDate <= dayEnd;
             });
 
             return {
               name: dayName,
-              leads: dayLeads.length,
-              fechados: dayLeads.filter((l) => l.status === 'Fechado').length,
+              leads: leadsCreated.length,
+              fechados: leadsClosed.length,
             };
           });
         }
@@ -250,19 +318,31 @@ export default function DashboardPage() {
 
         for (let d = new Date(dateRange.from); d <= dateRange.to; ) {
           const weekStart = new Date(d);
+          weekStart.setHours(0, 0, 0, 0);
           const weekEnd = new Date(d);
           weekEnd.setDate(weekEnd.getDate() + 6);
-          if (weekEnd > dateRange.to) weekEnd.setTime(dateRange.to.getTime());
+          weekEnd.setHours(23, 59, 59, 999);
+          if (weekEnd > dateRange.to) {
+            weekEnd.setTime(dateRange.to.getTime());
+            weekEnd.setHours(23, 59, 59, 999);
+          }
 
-          const weekLeads = filteredLeads.filter((lead) => {
-            const leadDate = new Date(lead.created_at);
-            return leadDate >= weekStart && leadDate <= weekEnd;
+          // Leads criados nesta semana
+          const leadsCreated = filteredLeads.filter((lead) => {
+            const createdDate = new Date(lead.created_at);
+            return createdDate >= weekStart && createdDate <= weekEnd;
+          });
+
+          // Leads fechados nesta semana (usar updated_at)
+          const leadsClosed = filteredLeads.filter((lead) => {
+            const updatedDate = new Date(lead.updated_at);
+            return lead.status === 'Fechado' && updatedDate >= weekStart && updatedDate <= weekEnd;
           });
 
           weeks.push({
             name: `Sem ${weekNum}`,
-            leads: weekLeads.length,
-            fechados: weekLeads.filter((l) => l.status === 'Fechado').length,
+            leads: leadsCreated.length,
+            fechados: leadsClosed.length,
           });
 
           d.setDate(d.getDate() + 7);
@@ -281,9 +361,10 @@ export default function DashboardPage() {
 
   // Dados do donut de conversão
   const conversionData = [
-    { name: 'Fechados', value: fechados, color: '#191919' },
-    { name: 'Em andamento', value: totalLeads - fechados, color: 'hsl(var(--primary))' },
-  ];
+    { name: 'Fechados', value: fechados, color: '#10b981' },
+    { name: 'Perdidos', value: perdidos, color: '#ef4444' },
+    { name: 'Em andamento', value: emAtendimento, color: 'hsl(var(--primary))' },
+  ].filter(item => item.value > 0); // Remove itens com valor 0 para não aparecer no gráfico
 
   // Dados do funil
   const funnelStages = [
@@ -423,10 +504,10 @@ export default function DashboardPage() {
       {/* Performance e Taxa de Conversão */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <PerformanceChart data={performanceData} />
+          <BarChartCustom data={performanceData} />
         </div>
         <div>
-          <ConversionDonut data={conversionData} />
+          <PieChartInteractive data={conversionData} />
         </div>
       </div>
 

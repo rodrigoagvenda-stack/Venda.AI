@@ -245,10 +245,12 @@ export default function MembrosPage() {
             Gerencie os membros da sua empresa
           </p>
         </div>
-        <Button onClick={() => setInviteDialogOpen(true)} className="w-full md:w-auto">
-          <UserPlus className="h-4 w-4 mr-2" />
-          Convidar Membro
-        </Button>
+        {user?.role === 'admin' && (
+          <Button onClick={() => setInviteDialogOpen(true)} className="w-full md:w-auto">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Convidar Membro
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -315,7 +317,7 @@ export default function MembrosPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 md:flex-shrink-0">
-                    {member.user_id !== user?.user_id && (
+                    {user?.role === 'admin' && member.user_id !== user?.user_id && (
                       <>
                         <Button
                           variant="ghost"

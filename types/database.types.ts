@@ -25,6 +25,7 @@ export interface User {
   company_id: number;
   name: string;
   email: string;
+  role?: 'admin' | 'manager' | 'member';
   photo_url?: string;
   description?: string;
   department?: string;

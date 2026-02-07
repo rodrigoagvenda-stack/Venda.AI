@@ -13,13 +13,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    // Usar Service Client para bypass RLS e permitir ver todos os membros da empresa
+    const supabase = await createServiceClient();
 
     const { data: members, error } = await supabase
       .from('users')
       .select('user_id, name, email, role, department, is_active, last_login, created_at')
       .eq('company_id', companyId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false});
 
     if (error) throw error;
 
