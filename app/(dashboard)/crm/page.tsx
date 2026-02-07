@@ -99,15 +99,16 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead; onEdit: () =
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className={`cursor-grab active:cursor-grabbing hover:shadow-2xl hover:scale-[1.03] transition-all duration-300 border-l-[6px] ${getStatusColor(lead.status)} mb-3 bg-card/80 backdrop-blur-sm`}>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-3">
-            <h4 className="font-bold text-sm flex-1 pr-2 text-foreground">{lead.company_name}</h4>
-            <div className="flex gap-1" style={{ pointerEvents: 'auto' }}>
+      <Card className={`cursor-grab active:cursor-grabbing hover:shadow-lg transition-all duration-200 border-l-4 ${getStatusColor(lead.status)} mb-2 h-[180px] flex flex-col`}>
+        <CardContent className="p-3 flex flex-col h-full">
+          {/* Header - Fixed */}
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-semibold text-sm flex-1 pr-2 text-foreground line-clamp-1">{lead.company_name}</h4>
+            <div className="flex gap-1 flex-shrink-0" style={{ pointerEvents: 'auto' }}>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
+                className="h-6 w-6 hover:bg-accent rounded-md"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -115,12 +116,12 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead; onEdit: () =
                   onEdit();
                 }}
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <Pencil className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all"
+                className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive rounded-md"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -128,50 +129,54 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead; onEdit: () =
                   onDelete();
                 }}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           </div>
 
-          {lead.contact_name && (
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <User className="h-3 w-3" />
-              {lead.contact_name}
-            </p>
-          )}
+          {/* Content - Flex grow */}
+          <div className="flex-1 flex flex-col gap-1.5 text-xs overflow-hidden">
+            {lead.contact_name && (
+              <div className="flex items-center gap-1 text-muted-foreground truncate">
+                <User className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{lead.contact_name}</span>
+              </div>
+            )}
 
-          {lead.whatsapp && (
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              {lead.whatsapp}
-            </p>
-          )}
+            {lead.whatsapp && (
+              <div className="flex items-center gap-1 text-muted-foreground truncate">
+                <Phone className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{lead.whatsapp}</span>
+              </div>
+            )}
 
-          {lead.project_value && lead.project_value > 0 && (
-            <p className="text-sm font-semibold text-primary mb-2 flex items-center gap-1">
-              <DollarSign className="h-4 w-4" />
-              R$ {lead.project_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          )}
+            {lead.project_value && lead.project_value > 0 && (
+              <div className="flex items-center gap-1 font-semibold text-primary">
+                <DollarSign className="h-3.5 w-3.5 flex-shrink-0" />
+                R$ {lead.project_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            )}
 
-          <div className="flex items-center gap-2 flex-wrap mt-3">
-            <span className={`text-xs px-2 py-1 rounded-full ${getPriorityBadge(lead.priority || 'Baixa')}`}>
+            {lead.segment && (
+              <div className="flex items-center gap-1 text-muted-foreground truncate">
+                <Building2 className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{lead.segment}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer - Fixed */}
+          <div className="flex items-center gap-1.5 mt-auto pt-2 border-t">
+            <span className={`text-[10px] px-1.5 py-0.5 rounded ${getPriorityBadge(lead.priority || 'Baixa')}`}>
               {lead.priority}
             </span>
             {lead.nivel_interesse && (
-              <span className="text-xs bg-orange-500/20 text-orange-700 px-2 py-1 rounded-full flex items-center gap-1">
-                {lead.nivel_interesse.includes('Quente') && <Flame className="h-3 w-3" />}
+              <span className="text-[10px] bg-orange-500/20 text-orange-700 px-1.5 py-0.5 rounded flex items-center gap-1">
+                {lead.nivel_interesse.includes('Quente') && <Flame className="h-2.5 w-2.5" />}
                 {lead.nivel_interesse}
               </span>
             )}
           </div>
-
-          {lead.segment && (
-            <p className="text-xs text-muted-foreground mt-2 italic flex items-center gap-1">
-              <Building2 className="h-3 w-3" />
-              {lead.segment}
-            </p>
-          )}
         </CardContent>
       </Card>
     </div>
@@ -1055,13 +1060,13 @@ export default function CRMPage() {
       ) : (
         <>
           {/* Desktop Table View */}
-          <Card className="hidden md:block">
+          <Card className="hidden md:block border-0 shadow-none">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-secondary/50">
-                    <tr>
-                      <th className="p-4 w-12">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-4 py-3 w-12">
                         <input
                           type="checkbox"
                           checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
@@ -1069,26 +1074,22 @@ export default function CRMPage() {
                           className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                         />
                       </th>
-                      <th className="text-left p-4 font-semibold text-sm">NOME DA EMPRESA</th>
-                      <th className="text-left p-4 font-semibold text-sm">SEGMENTO</th>
-                      <th className="text-left p-4 font-semibold text-sm">STATUS</th>
-                      <th className="text-left p-4 font-semibold text-sm">WEBSITE</th>
-                      <th className="text-left p-4 font-semibold text-sm">TELEFONE</th>
-                      <th className="text-left p-4 font-semibold text-sm">PRIORIDADE</th>
-                      <th className="text-left p-4 font-semibold text-sm">IMPORTAÇÃO</th>
-                      <th className="text-left p-4 font-semibold text-sm">OBSERVAÇÕES</th>
-                      <th className="text-left p-4 font-semibold text-sm">AÇÕES</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Empresa</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Segmento</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Status</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Valor</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Contato</th>
+                      <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Prioridade</th>
+                      <th className="text-right px-4 py-3 font-medium text-xs text-muted-foreground">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedLeads.map((lead, index) => (
                       <tr
                         key={lead.id}
-                        className={`border-b hover:bg-accent/50 transition-colors ${
-                          index % 2 === 0 ? 'bg-background' : 'bg-secondary/20'
-                        }`}
+                        className="border-b hover:bg-accent/30 transition-colors"
                       >
-                        <td className="p-4">
+                        <td className="px-4 py-4">
                           <input
                             type="checkbox"
                             checked={selectedLeads.includes(lead.id)}
@@ -1096,60 +1097,71 @@ export default function CRMPage() {
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                           />
                         </td>
-                        <td className="p-4">
+                        <td className="px-4 py-4">
                           <div>
                             <p className="font-medium text-sm">{lead.company_name}</p>
                             {lead.contact_name && (
-                              <p className="text-xs text-muted-foreground">{lead.contact_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{lead.contact_name}</p>
                             )}
                           </div>
                         </td>
-                        <td className="p-4 text-sm">{lead.segment || '-'}</td>
-                        <td className="p-4">
-                          <span className={`text-xs px-3 py-1 rounded-full ${getStatusBadgeColor(lead.status || '')}`}>
+                        <td className="px-4 py-4 text-sm text-muted-foreground">{lead.segment || '—'}</td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs px-2.5 py-1 rounded-md font-medium ${getStatusBadgeColor(lead.status || '')}`}>
                             {lead.status}
                           </span>
                         </td>
-                        <td className="p-4">
-                          {lead.website_or_instagram ? (
-                            <a
-                              href={lead.website_or_instagram.startsWith('http') ? lead.website_or_instagram : `https://${lead.website_or_instagram}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-orange-500 hover:underline text-sm"
-                            >
-                              Link
-                            </a>
+                        <td className="px-4 py-4">
+                          {lead.project_value && lead.project_value > 0 ? (
+                            <span className="text-sm font-medium">
+                              R$ {lead.project_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
                           ) : (
-                            <span className="text-sm">Não tem</span>
+                            <span className="text-sm text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td className="p-4 text-sm">{lead.whatsapp || '-'}</td>
-                        <td className="p-4">
-                          <span className={`text-xs px-3 py-1 rounded-full flex items-center gap-1 w-fit ${getPriorityBadgeColor(lead.priority || '')}`}>
-                            <span className="w-2 h-2 rounded-full bg-current" />
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            {lead.whatsapp && (
+                              <span className="text-xs text-muted-foreground">{lead.whatsapp}</span>
+                            )}
+                            {lead.website_or_instagram && (
+                              <a
+                                href={lead.website_or_instagram.startsWith('http') ? lead.website_or_instagram : `https://${lead.website_or_instagram}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline"
+                              >
+                                Website
+                              </a>
+                            )}
+                            {!lead.whatsapp && !lead.website_or_instagram && (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${getPriorityBadgeColor(lead.priority || '')}`}>
                             {lead.priority}
                           </span>
                         </td>
-                        <td className="p-4 text-sm">{lead.import_source || '-'}</td>
-                        <td className="p-4 text-sm text-muted-foreground max-w-[200px] truncate">{lead.notes || '-'}</td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
+                        <td className="px-4 py-4 text-right">
+                          <div className="flex gap-1 justify-end">
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleOpenModal(lead)}
-                              className="h-8 w-8"
+                              className="h-8 w-8 hover:bg-accent"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => setDeletingLead(lead)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700"
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </td>
@@ -1164,8 +1176,6 @@ export default function CRMPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
-                totalItems={filteredLeads.length}
-                itemsPerPage={itemsPerPage}
               />
             )}
           </Card>
