@@ -13,8 +13,8 @@ interface DateRange {
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { FilterButtons, FilterPeriod } from '@/components/dashboard/FilterButtons';
 import { DateRangePicker } from '@/components/dashboard/DateRangePicker';
-import { BarChartCustom } from '@/components/dashboard/BarChartCustom';
-import { PieChartInteractive } from '@/components/dashboard/PieChartInteractive';
+import { BarChartMultiple } from '@/components/dashboard/BarChartMultiple';
+import { PieChartDonutActive } from '@/components/dashboard/PieChartDonutActive';
 import { SalesFunnel } from '@/components/dashboard/SalesFunnel';
 
 interface Lead {
@@ -505,10 +505,10 @@ export default function DashboardPage() {
       {/* Performance e Taxa de Conversão */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <BarChartCustom data={performanceData} />
+          <BarChartMultiple data={performanceData} />
         </div>
         <div>
-          <PieChartInteractive data={conversionData} />
+          <PieChartDonutActive data={conversionData} />
         </div>
       </div>
 
