@@ -186,17 +186,17 @@ export default function ProspectAIPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 md:p-8 pt-20">
-      <div className="w-full max-w-4xl space-y-8 md:space-y-12">
+      <div className="w-full max-w-3xl space-y-6">
         {/* Header */}
-        <div className="text-center space-y-6 md:space-y-8">
+        <div className="text-center space-y-3">
           <AnimatedHeadline />
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
             Transforme qualquer busca do Google Maps em leads qualificados.
           </p>
         </div>
 
         {/* Main Card */}
-        <Card className="p-4 md:p-8 space-y-4 md:space-y-6 bg-card border-border">
+        <Card className="p-6 space-y-4 bg-card border-border/50">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'url' | 'manual')}>
             <TabsList className="grid w-full grid-cols-2 mb-4 md:mb-6">
               <TabsTrigger value="manual" className="text-xs md:text-sm">
@@ -313,12 +313,11 @@ export default function ProspectAIPage() {
           <Button
             onClick={handleExtract}
             disabled={extracting}
-            size="lg"
-            className="w-full text-base md:text-lg h-12 md:h-14"
+            className="w-full text-sm h-10"
           >
             {extracting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {currentAction}
               </>
             ) : (

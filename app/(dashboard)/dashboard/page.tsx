@@ -365,11 +365,10 @@ export default function DashboardPage() {
 
   const performanceData = generatePerformanceData();
 
-  // Dados do donut de conversão
+  // Dados do donut de conversão - Fechados vs Em andamento
   const conversionData = [
     { name: 'Fechados', value: fechados, color: '#EEA130' },
-    { name: 'Perdidos', value: perdidos, color: '#191919' },
-    { name: 'Em andamento', value: emAtendimento, color: '#EEA130' },
+    { name: 'Em andamento', value: emAtendimento, color: '#191919' },
   ].filter(item => item.value > 0); // Remove itens com valor 0 para não aparecer no gráfico
 
   // Dados do funil

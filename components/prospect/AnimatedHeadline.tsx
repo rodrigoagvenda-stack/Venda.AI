@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 
 export function AnimatedHeadline() {
   const textRef = useRef<HTMLSpanElement>(null);
+  const [displayText, setDisplayText] = useState('');
 
   const texts = [
     'transformar buscas em oportunidades reais',
@@ -13,47 +14,51 @@ export function AnimatedHeadline() {
   ];
 
   useEffect(() => {
-    if (!textRef.current) return;
-
     let currentIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
 
-    const animateText = () => {
-      const timeline = gsap.timeline();
+    const typeWriter = () => {
+      const currentText = texts[currentIndex];
 
-      timeline
-        .to(textRef.current, {
-          opacity: 0,
-          y: -20,
-          duration: 0.5,
-          ease: 'power2.in',
-        })
-        .call(() => {
+      if (!isDeleting) {
+        // Digitando
+        if (charIndex < currentText.length) {
+          setDisplayText(currentText.substring(0, charIndex + 1));
+          charIndex++;
+          setTimeout(typeWriter, 50);
+        } else {
+          // Pausa antes de apagar
+          setTimeout(() => {
+            isDeleting = true;
+            typeWriter();
+          }, 2000);
+        }
+      } else {
+        // Apagando
+        if (charIndex > 0) {
+          setDisplayText(currentText.substring(0, charIndex - 1));
+          charIndex--;
+          setTimeout(typeWriter, 30);
+        } else {
+          // Próximo texto
+          isDeleting = false;
           currentIndex = (currentIndex + 1) % texts.length;
-          if (textRef.current) {
-            textRef.current.textContent = texts[currentIndex];
-          }
-        })
-        .to(textRef.current, {
-          opacity: 1,
-          y: 0,
-          duration: 0.5,
-          ease: 'power2.out',
-        });
+          setTimeout(typeWriter, 500);
+        }
+      }
     };
 
-    // Primeira animação após 3 segundos
-    const timer = setInterval(animateText, 3000);
-
-    return () => clearInterval(timer);
+    typeWriter();
   }, []);
 
   return (
-    <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">
-      O jeito mais <span className="text-primary">rápido</span> de{' '}
-      <span ref={textRef} className="inline-block">
-        {texts[0]}
+    <h2 className="text-xl md:text-2xl font-normal leading-relaxed">
+      O jeito mais <span className="text-primary font-medium">rápido</span> de{' '}
+      <span ref={textRef} className="inline-block min-w-[300px] text-left">
+        {displayText}
+        <span className="animate-pulse">|</span>
       </span>
-      <span className="text-primary">.</span>
     </h2>
   );
 }

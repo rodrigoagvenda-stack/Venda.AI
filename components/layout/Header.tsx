@@ -28,7 +28,7 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+    <header className="h-14 border-b border-border/50 bg-background flex items-center justify-between px-6">
       {/* User Info */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
