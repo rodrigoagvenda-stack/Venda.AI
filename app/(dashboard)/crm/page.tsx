@@ -843,17 +843,19 @@ export default function CRMPage() {
           </Button>
           <Button
             variant={viewMode === 'table' ? 'default' : 'outline'}
-            size="icon"
+            size="sm"
             onClick={() => setViewMode('table')}
           >
-            <TableIcon className="h-4 w-4" />
+            <TableIcon className="h-4 w-4 mr-2" />
+            Tabela
           </Button>
           <Button
             variant={viewMode === 'kanban' ? 'default' : 'outline'}
-            size="icon"
+            size="sm"
             onClick={() => setViewMode('kanban')}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4 mr-2" />
+            Kanban
           </Button>
         </div>
       </div>

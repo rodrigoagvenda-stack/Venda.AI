@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { gsap } from 'gsap';
+import { useEffect, useState } from 'react';
 
 export function AnimatedHeadline() {
-  const textRef = useRef<HTMLSpanElement>(null);
   const [displayText, setDisplayText] = useState('');
 
   const texts = [
@@ -53,12 +51,12 @@ export function AnimatedHeadline() {
   }, []);
 
   return (
-    <h2 className="text-xl md:text-2xl font-normal leading-relaxed">
-      O jeito mais <span className="text-primary font-medium">rápido</span> de{' '}
-      <span ref={textRef} className="inline-block min-w-[300px] text-left">
+    <div className="text-xl md:text-2xl font-normal leading-relaxed">
+      <div>O jeito mais <span className="text-primary font-medium">rápido</span> de</div>
+      <div className="mt-2">
         {displayText}
         <span className="animate-pulse">|</span>
-      </span>
-    </h2>
+      </div>
+    </div>
   );
 }
