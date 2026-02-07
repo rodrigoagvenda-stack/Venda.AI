@@ -346,8 +346,6 @@ export default function MembrosPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={filteredMembers.length}
-            itemsPerPage={itemsPerPage}
           />
         )}
       </Card>

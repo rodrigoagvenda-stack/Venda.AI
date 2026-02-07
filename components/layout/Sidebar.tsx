@@ -111,7 +111,7 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={cn(
-          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-black border-r border-border transition-all duration-300',
+          'hidden md:fixed md:inset-y-0 md:z-50 md:flex md:flex-col bg-card border-r border-border transition-all duration-300',
           isCollapsed ? 'md:w-20' : 'md:w-64'
         )}
       >
@@ -133,8 +133,8 @@ export function Sidebar({
                 className={cn(
                   'group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200',
                   isActive
-                    ? 'bg-white/5 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5',
+                    ? 'bg-accent text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                   isCollapsed && 'justify-center px-2'
                 )}
                 title={isCollapsed ? link.label : undefined}
@@ -156,10 +156,10 @@ export function Sidebar({
         </nav>
 
         {/* Company Profile */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-border">
           <div
             className={cn(
-              'flex items-center gap-3 px-3 py-3 rounded-xl bg-white/5',
+              'flex items-center gap-3 px-3 py-3 rounded-xl bg-accent',
               isCollapsed && 'justify-center px-2'
             )}
           >
@@ -167,15 +167,15 @@ export function Sidebar({
               {companyImage ? (
                 <img src={companyImage} alt={companyName || 'Empresa'} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-xs font-bold text-white">
+                <span className="text-xs font-bold text-primary-foreground">
                   {companyName?.charAt(0)?.toUpperCase() || 'E'}
                 </span>
               )}
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{companyName || 'Empresa'}</p>
-                <p className="text-xs text-gray-400 truncate">
+                <p className="text-sm font-medium text-foreground truncate">{companyName || 'Empresa'}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {companyEmail || 'empresa@vend.ai'}
                 </p>
               </div>
@@ -190,7 +190,7 @@ export function Sidebar({
               onClick={handleLogout}
               disabled={isLoggingOut}
               className={cn(
-                'flex-1 justify-start text-gray-400 hover:text-white hover:bg-white/5',
+                'flex-1 justify-start text-muted-foreground hover:text-foreground hover:bg-accent',
                 isCollapsed && 'justify-center px-2'
               )}
               size={isCollapsed ? 'icon' : 'default'}
@@ -206,7 +206,7 @@ export function Sidebar({
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full mt-2 text-gray-400 hover:text-white hover:bg-white/5"
+            className="w-full mt-2 text-muted-foreground hover:text-foreground hover:bg-accent"
           >
             {isCollapsed ? (
               <ChevronRight className="h-4 w-4" />
