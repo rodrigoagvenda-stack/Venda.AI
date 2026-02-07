@@ -22,6 +22,7 @@ interface Lead {
   status: string;
   project_value: number;
   created_at: string;
+  updated_at: string;
 }
 
 export default function DashboardPage() {
