@@ -60,7 +60,7 @@ export default function DashboardPage() {
 
       const { data: leadsData } = await supabase
         .from('leads')
-        .select('id, status, project_value, created_at')
+        .select('id, status, project_value, created_at, updated_at')
         .eq('company_id', userData.company_id)
         .order('created_at', { ascending: true });
 
