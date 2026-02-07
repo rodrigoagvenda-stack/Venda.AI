@@ -59,8 +59,9 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
+      className="h-full"
     >
-      <Card className="flex flex-col">
+      <Card className="flex flex-col h-full">
         <CardHeader className="pb-0">
           <CardTitle>Taxa de conversão geral</CardTitle>
           <CardDescription>Distribuição de leads</CardDescription>

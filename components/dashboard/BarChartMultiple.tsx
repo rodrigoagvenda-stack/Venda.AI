@@ -50,13 +50,14 @@ export function BarChartMultiple({ data }: BarChartMultipleProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="h-full"
     >
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle>Performance de Vendas</CardTitle>
           <CardDescription>Total de leads vs fechados no período</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1">
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <BarChart accessibilityLayer data={data}>
               <CartesianGrid vertical={false} />
@@ -76,7 +77,7 @@ export function BarChartMultiple({ data }: BarChartMultipleProps) {
             </BarChart>
           </ChartContainer>
         </CardContent>
-        <CardFooter className="flex-col items-start gap-2 text-sm">
+        <CardFooter className="flex-col items-start gap-2 text-sm mt-auto">
           <div className="flex gap-2 font-medium leading-none">
             Taxa de conversão: {conversionRate}% <TrendingUp className="h-4 w-4" />
           </div>
