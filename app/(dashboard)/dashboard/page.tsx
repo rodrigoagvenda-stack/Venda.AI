@@ -141,6 +141,11 @@ export default function DashboardPage() {
     .filter((l) => l.status === 'Fechado')
     .reduce((sum, l) => sum + (l.project_value || 0), 0);
 
+  // Faturamento em negociação (leads que ainda estão em andamento)
+  const faturamentoEmNegociacao = filteredLeads
+    .filter((l) => l.status !== 'Fechado' && l.status !== 'Perdido')
+    .reduce((sum, l) => sum + (l.project_value || 0), 0);
+
   // Taxa de conversão: leads fechados / (leads fechados + perdidos)
   // Isso ignora leads que ainda estão em andamento
   const leadsFinalizados = fechados + perdidos;
@@ -471,7 +476,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Cards de Métricas */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <MetricCard
           title="Novos leads"
           value={novosLeads}
@@ -494,9 +499,16 @@ export default function DashboardPage() {
           format="percentage"
         />
         <MetricCard
+          title="Em negociação"
+          value={faturamentoEmNegociacao}
+          subtitle={`Valor em pipeline`}
+          icon={DollarSign}
+          format="currency"
+        />
+        <MetricCard
           title="Faturamento"
           value={faturamento}
-          subtitle={`Faturamento em negócios`}
+          subtitle={`Negócios fechados`}
           icon={DollarSign}
           format="currency"
         />

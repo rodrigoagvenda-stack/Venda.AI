@@ -61,14 +61,14 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
       transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
     >
       <Card className="flex flex-col">
-        <CardHeader className="items-center pb-0">
+        <CardHeader className="pb-0">
           <CardTitle>Taxa de conversão geral</CardTitle>
           <CardDescription>Distribuição de leads</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 pb-0">
           <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square max-h-[250px]"
+            className="mx-auto aspect-square h-[250px]"
           >
             <PieChart>
               <ChartTooltip

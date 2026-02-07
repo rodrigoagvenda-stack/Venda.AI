@@ -57,7 +57,7 @@ export function BarChartMultiple({ data }: BarChartMultipleProps) {
           <CardDescription>Total de leads vs fechados no período</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig}>
+          <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <BarChart accessibilityLayer data={data}>
               <CartesianGrid vertical={false} />
               <XAxis
