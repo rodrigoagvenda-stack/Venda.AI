@@ -424,8 +424,6 @@ export default function BriefingListPage() {
             currentPage={currentPagePauta}
             totalPages={totalPagesPauta}
             onPageChange={setCurrentPagePauta}
-            totalItems={pautas.length}
-            itemsPerPage={itemsPerPage}
           />
         )}
       </Card>
@@ -518,8 +516,6 @@ export default function BriefingListPage() {
             currentPage={currentPageCliente}
             totalPages={totalPagesCliente}
             onPageChange={setCurrentPageCliente}
-            totalItems={clientes.length}
-            itemsPerPage={itemsPerPage}
           />
         )}
       </Card>
@@ -608,8 +604,6 @@ export default function BriefingListPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={responses.length}
-            itemsPerPage={itemsPerPage}
           />
         )}
       </Card>
