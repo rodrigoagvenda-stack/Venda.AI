@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Loader2, Shield, User } from 'lucide-react';
 import { LogoWhite } from '@/components/Logo';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,6 +18,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<'user' | 'admin'>('user');
+  const [isChangingMode, setIsChangingMode] = useState(false);
+
+  const handleModeChange = (mode: 'user' | 'admin') => {
+    if (mode !== loginMode) {
+      setIsChangingMode(true);
+      setTimeout(() => {
+        setLoginMode(mode);
+        setIsChangingMode(false);
+      }, 200);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +82,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Logo e Frase */}
         <div className="text-center space-y-3">
-          <LogoWhite width={140} height={48} />
+          <div className="flex justify-center">
+            <LogoWhite width={140} height={48} />
+          </div>
           <p className="text-sm text-muted-foreground">
             Quem já queimou os barcos 🔥 entra por aqui.
           </p>
@@ -82,24 +96,26 @@ export default function LoginPage() {
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={() => setLoginMode('user')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all ${
+                onClick={() => handleModeChange('user')}
+                disabled={isChangingMode}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-300 ${
                   loginMode === 'user'
-                    ? 'bg-primary text-primary-foreground font-medium'
+                    ? 'bg-primary text-primary-foreground font-medium scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
+                } ${isChangingMode ? 'opacity-50' : ''}`}
               >
                 <User className="h-4 w-4" />
                 Usuário
               </button>
               <button
                 type="button"
-                onClick={() => setLoginMode('admin')}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all ${
+                onClick={() => handleModeChange('admin')}
+                disabled={isChangingMode}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-300 ${
                   loginMode === 'admin'
-                    ? 'bg-primary text-primary-foreground font-medium'
+                    ? 'bg-primary text-primary-foreground font-medium scale-105'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
+                } ${isChangingMode ? 'opacity-50' : ''}`}
               >
                 <Shield className="h-4 w-4" />
                 Admin
@@ -107,52 +123,62 @@ export default function LoginPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm">
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-10"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm">
-                  Senha
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="h-10"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-10 text-sm font-medium"
-                disabled={loading}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={loginMode}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
-              </Button>
-            </form>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm">
+                      Senha
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                      className="h-10"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full h-10 text-sm font-medium"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Entrando...
+                      </>
+                    ) : (
+                      'Entrar'
+                    )}
+                  </Button>
+                </form>
+              </motion.div>
+            </AnimatePresence>
             <div className="text-center pt-2">
               <p className="text-xs text-muted-foreground">
                 Não tem uma conta? Entre em contato com o admin.
