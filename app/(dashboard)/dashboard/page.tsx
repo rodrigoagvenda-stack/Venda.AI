@@ -53,7 +53,7 @@ export default function DashboardPage() {
       const { data: userData } = await supabase
         .from('users')
         .select('company_id')
-        .eq('user_id', user.id)
+        .eq('auth_user_id', user.id)
         .single();
 
       if (!userData?.company_id) return;
