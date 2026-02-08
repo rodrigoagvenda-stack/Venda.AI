@@ -15,6 +15,7 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
   type ChartConfig,
 } from "@/components/ui/chart"
 
@@ -113,6 +114,29 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
                   }}
                 />
               </Pie>
+              <ChartLegend
+                content={({ payload }) => {
+                  if (!payload?.length) return null;
+                  return (
+                    <div className="flex items-center justify-center gap-6 pt-4">
+                      {payload.map((item: any) => {
+                        const dataItem = data.find(d => d.name.toLowerCase().replace(/\s+/g, '_') === item.value);
+                        return (
+                          <div key={item.value} className="flex items-center gap-2">
+                            <div
+                              className="h-3 w-3 rounded-sm"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {dataItem?.name} {dataItem?.value}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }}
+              />
             </PieChart>
           </ChartContainer>
         </CardContent>
