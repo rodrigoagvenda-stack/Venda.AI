@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,35 @@ import { toast } from 'sonner';
 import { Loader2, Shield, User } from 'lucide-react';
 import { LogoWhite } from '@/components/Logo';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isDark, setIsDark] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<'user' | 'admin'>('user');
   const [isChangingMode, setIsChangingMode] = useState(false);
+
+  useEffect(() => {
+    // Detectar tema dark/light
+    const checkTheme = () => {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkMode);
+    };
+
+    checkTheme();
+
+    // Observar mudanças no tema
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleModeChange = (mode: 'user' | 'admin') => {
     if (mode !== loginMode) {
@@ -83,7 +104,17 @@ export default function LoginPage() {
         {/* Logo e Frase */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <LogoWhite width={140} height={48} />
+            {isDark ? (
+              <LogoWhite width={140} height={48} />
+            ) : (
+              <Image
+                src="https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Logo-Venda-Ai-transparente.png"
+                alt="Vend.AI"
+                width={140}
+                height={48}
+                priority
+              />
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             Quem já queimou os barcos 🔥 entra por aqui.

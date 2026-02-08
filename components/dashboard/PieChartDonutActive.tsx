@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import {
   ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
   ChartLegend,
   type ChartConfig,
 } from "@/components/ui/chart"
@@ -71,6 +73,28 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
             className="mx-auto aspect-square h-[325px]"
           >
             <PieChart>
+              <ChartTooltip
+                cursor={false}
+                content={({ payload }) => {
+                  if (!payload || !payload.length) return null;
+                  const item = payload[0];
+                  const dataItem = data.find(d => d.name.toLowerCase().replace(/\s+/g, '_') === item.name);
+
+                  return (
+                    <div className="rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2.5 w-2.5 rounded-sm"
+                          style={{ backgroundColor: item.payload.fill }}
+                        />
+                        <span className="text-muted-foreground">
+                          {dataItem?.name} {dataItem?.value}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
               <Pie
                 data={chartData}
                 dataKey="value"
