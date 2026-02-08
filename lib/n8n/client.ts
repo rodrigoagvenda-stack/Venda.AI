@@ -236,7 +236,6 @@ export async function sendWhatsAppMessage(payload: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-webhook-secret': WEBHOOK_SECRET,
       },
       body: JSON.stringify(payload),
     });
