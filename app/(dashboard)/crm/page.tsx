@@ -1073,7 +1073,7 @@ export default function CRMPage() {
                           type="checkbox"
                           checked={selectedLeads.length === paginatedLeads.length && paginatedLeads.length > 0}
                           onChange={handleSelectAll}
-                          className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-primary"
                         />
                       </th>
                       <th className="text-left px-4 py-3 font-medium text-xs text-muted-foreground">Empresa</th>
@@ -1096,7 +1096,7 @@ export default function CRMPage() {
                             type="checkbox"
                             checked={selectedLeads.includes(lead.id)}
                             onChange={() => handleSelectLead(lead.id)}
-                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-primary"
                           />
                         </td>
                         <td className="px-4 py-4">
