@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/card"
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   ChartLegend,
   type ChartConfig,
 } from "@/components/ui/chart"
@@ -73,10 +71,6 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
             className="mx-auto aspect-square h-[325px]"
           >
             <PieChart>
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
               <Pie
                 data={chartData}
                 dataKey="value"
