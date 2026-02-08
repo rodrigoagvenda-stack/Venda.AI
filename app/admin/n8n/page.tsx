@@ -21,8 +21,15 @@ interface WebhookConfig {
 export default function N8NConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingMaps, setSavingMaps] = useState(false);
   const [config, setConfig] = useState<WebhookConfig | null>(null);
+  const [mapsConfig, setMapsConfig] = useState<WebhookConfig | null>(null);
   const [formData, setFormData] = useState({
+    webhook_url: '',
+    auth_username: '',
+    auth_password: '',
+  });
+  const [mapsFormData, setMapsFormData] = useState({
     webhook_url: '',
     auth_username: '',
     auth_password: '',
@@ -34,9 +41,10 @@ export default function N8NConfigPage() {
 
   async function fetchConfig() {
     try {
-      const response = await fetch('/api/admin/n8n-config?type=icp');
-      if (response.ok) {
-        const data = await response.json();
+      // Buscar config ICP
+      const responseICP = await fetch('/api/admin/n8n-config?type=icp');
+      if (responseICP.ok) {
+        const data = await responseICP.json();
         if (data.data && data.data.length > 0) {
           const icpConfig = data.data[0];
           setConfig(icpConfig);
@@ -44,6 +52,21 @@ export default function N8NConfigPage() {
             webhook_url: icpConfig.webhook_url || '',
             auth_username: icpConfig.auth_username || '',
             auth_password: icpConfig.auth_password || '',
+          });
+        }
+      }
+
+      // Buscar config Maps
+      const responseMaps = await fetch('/api/admin/n8n-config?type=maps');
+      if (responseMaps.ok) {
+        const data = await responseMaps.json();
+        if (data.data && data.data.length > 0) {
+          const mapsCfg = data.data[0];
+          setMapsConfig(mapsCfg);
+          setMapsFormData({
+            webhook_url: mapsCfg.webhook_url || '',
+            auth_username: mapsCfg.auth_username || '',
+            auth_password: mapsCfg.auth_password || '',
           });
         }
       }
@@ -73,12 +96,40 @@ export default function N8NConfigPage() {
 
       if (!response.ok) throw new Error(data.message);
 
-      toast.success('Webhook configurado com sucesso!');
+      toast.success('Webhook ICP configurado com sucesso!');
       fetchConfig();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao salvar configuração');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveMaps() {
+    setSavingMaps(true);
+    try {
+      const response = await fetch('/api/admin/n8n-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhook_type: 'maps',
+          webhook_url: mapsFormData.webhook_url,
+          auth_type: 'basic',
+          auth_username: mapsFormData.auth_username,
+          auth_password: mapsFormData.auth_password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      toast.success('Webhook Maps configurado com sucesso!');
+      fetchConfig();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar configuração');
+    } finally {
+      setSavingMaps(false);
     }
   }
 
@@ -161,6 +212,80 @@ export default function N8NConfigPage() {
           <div className="flex justify-end">
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Configuração'
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Webhook className="h-5 w-5 text-primary" />
+            <CardTitle>Webhook Maps - Google Maps</CardTitle>
+          </div>
+          <CardDescription>
+            Configure a URL e credenciais de autenticação para o webhook de extração de leads do Google Maps
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="maps_webhook_url">URL do Webhook</Label>
+            <Input
+              id="maps_webhook_url"
+              type="url"
+              placeholder="https://vendai-n8n.aw5nou.easypanel.host/webhook/..."
+              value={mapsFormData.webhook_url}
+              onChange={(e) => setMapsFormData({ ...mapsFormData, webhook_url: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              URL completa do webhook n8n para extração de leads do Google Maps
+            </p>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-semibold mb-3">Autenticação Basic Auth</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="maps_auth_username">Username</Label>
+                <Input
+                  id="maps_auth_username"
+                  placeholder="Username"
+                  value={mapsFormData.auth_username}
+                  onChange={(e) => setMapsFormData({ ...mapsFormData, auth_username: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maps_auth_password">Password</Label>
+                <Input
+                  id="maps_auth_password"
+                  type="password"
+                  placeholder="Password"
+                  value={mapsFormData.auth_password}
+                  onChange={(e) => setMapsFormData({ ...mapsFormData, auth_password: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {mapsConfig && (
+            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Webhook configurado e ativo
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveMaps} disabled={savingMaps}>
+              {savingMaps ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Salvando...
