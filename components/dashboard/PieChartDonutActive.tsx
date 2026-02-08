@@ -119,8 +119,8 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
                   if (!payload?.length) return null;
                   return (
                     <div className="flex items-center justify-center gap-6 pt-4">
-                      {payload.map((item: any) => {
-                        const dataItem = data.find(d => d.name.toLowerCase().replace(/\s+/g, '_') === item.value);
+                      {payload.map((item: any, index: number) => {
+                        const dataItem = data[index];
                         return (
                           <div key={item.value} className="flex items-center gap-2">
                             <div
@@ -128,7 +128,7 @@ export function PieChartDonutActive({ data }: PieChartDonutActiveProps) {
                               style={{ backgroundColor: item.color }}
                             />
                             <span className="text-sm text-muted-foreground">
-                              {dataItem?.name} {dataItem?.value}
+                              {dataItem?.name}
                             </span>
                           </div>
                         );
