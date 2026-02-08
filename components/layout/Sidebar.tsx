@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LogoWhite } from '@/components/Logo';
+import Image from 'next/image';
 
 interface SidebarProps {
   hasVendAgro?: boolean;
@@ -43,6 +44,26 @@ export function Sidebar({
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Detectar tema dark/light
+    const checkTheme = () => {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkMode);
+    };
+
+    checkTheme();
+
+    // Observar mudanças no tema
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const links = [
     {
@@ -117,7 +138,19 @@ export function Sidebar({
       >
         {/* Logo */}
         <div className="flex items-center h-16 px-4">
-          {!isCollapsed && <LogoWhite width={100} height={36} />}
+          {!isCollapsed && (
+            isDark ? (
+              <LogoWhite width={100} height={36} />
+            ) : (
+              <Image
+                src="https://dkvznmmiiiljyrkopiqx.supabase.co/storage/v1/object/public/whatsapp-media/1/whatsapp/Logo-Venda-Ai-transparente.png"
+                alt="Vend.AI"
+                width={100}
+                height={36}
+                priority
+              />
+            )
+          )}
         </div>
 
         {/* Navigation */}
