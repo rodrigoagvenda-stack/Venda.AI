@@ -1,9 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 
-const N8N_WEBHOOK_MAPS = process.env.N8N_WEBHOOK_MAPS!;
-const N8N_WEBHOOK_ICP = process.env.N8N_WEBHOOK_ICP!;
 const N8N_WEBHOOK_WHATSAPP = process.env.N8N_WEBHOOK_WHATSAPP!;
-const WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET!;
 
 interface N8NResponse {
   success: boolean;
@@ -17,12 +14,47 @@ export async function extractLeadsFromMaps(
   companyId: number
 ): Promise<N8NResponse> {
   try {
-    const response = await fetch(N8N_WEBHOOK_MAPS, {
+    console.log('[MAPS] Iniciando extração para company_id:', companyId);
+
+    // Buscar configuração do webhook do banco de dados
+    const supabase = await createClient();
+    console.log('[MAPS] Supabase client criado');
+
+    const { data: webhookConfig, error: configError } = await supabase
+      .from('n8n_webhook_config')
+      .select('*')
+      .eq('webhook_type', 'maps')
+      .eq('is_active', true)
+      .single();
+
+    console.log('[MAPS] Webhook config:', webhookConfig);
+    console.log('[MAPS] Config error:', configError);
+
+    if (configError || !webhookConfig) {
+      throw new Error('Webhook Maps não configurado. Configure em Admin > N8N.');
+    }
+
+    console.log('[MAPS] Webhook URL:', webhookConfig.webhook_url);
+    console.log('[MAPS] Auth type:', webhookConfig.auth_type);
+
+    // Criar headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Adicionar Basic Auth se configurado
+    if (webhookConfig.auth_type === 'basic' && webhookConfig.auth_username && webhookConfig.auth_password) {
+      const basicAuth = Buffer.from(
+        `${webhookConfig.auth_username}:${webhookConfig.auth_password}`
+      ).toString('base64');
+      headers['Authorization'] = `Basic ${basicAuth}`;
+      console.log('[MAPS] Basic Auth configurado');
+    }
+
+    console.log('[MAPS] Enviando requisição para n8n...');
+    const response = await fetch(webhookConfig.webhook_url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-webhook-secret': WEBHOOK_SECRET,
-      },
+      headers,
       body: JSON.stringify({
         startUrls: [{ url: startUrl }],
         company_id: companyId,
@@ -30,13 +62,35 @@ export async function extractLeadsFromMaps(
       }),
     });
 
+    console.log('[MAPS] Response status:', response.status);
+    console.log('[MAPS] Response OK:', response.ok);
+
+    // Pegar texto da resposta PRIMEIRO para debug
+    const responseText = await response.text();
+    console.log('[MAPS] Response text (primeiros 500 chars):', responseText.substring(0, 500));
+
     if (!response.ok) {
-      throw new Error(`N8N request failed: ${response.statusText}`);
+      throw new Error(`N8N request failed: ${response.statusText} - ${responseText}`);
     }
 
-    return await response.json();
+    // Tratar resposta vazia
+    if (!responseText || responseText.trim() === '') {
+      console.warn('[MAPS] n8n retornou resposta vazia! Considerando sucesso.');
+      return { success: true, message: 'Webhook executado (resposta vazia)', data: {} };
+    }
+
+    // Tentar parsear como JSON
+    try {
+      const result = JSON.parse(responseText);
+      console.log('[MAPS] Resultado parseado:', result);
+      return result;
+    } catch (parseError) {
+      console.error('[MAPS] ERRO ao parsear JSON:', parseError);
+      console.error('[MAPS] Texto completo da resposta:', responseText);
+      throw new Error(`n8n retornou resposta inválida (não é JSON): ${responseText.substring(0, 200)}`);
+    }
   } catch (error) {
-    console.error('Error calling n8n Maps extraction:', error);
+    console.error('[MAPS] ERRO na extração:', error);
     throw error;
   }
 }
