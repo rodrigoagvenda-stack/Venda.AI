@@ -239,12 +239,20 @@ export default function BriefingListPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Gerencie briefings e pautas</p>
         </div>
-        <Link href="/admin/briefing/configuracoes">
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Settings className="mr-2 h-4 w-4" />
-            Configurar Webhook
-          </Button>
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/admin/briefing/mt">
+            <Button className="w-full sm:w-auto">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Briefings por Empresa
+            </Button>
+          </Link>
+          <Link href="/admin/briefing/configuracoes">
+            <Button variant="outline" className="w-full sm:w-auto">
+              <Settings className="mr-2 h-4 w-4" />
+              Configurar Webhook
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
