@@ -472,7 +472,7 @@ export default function BriefingSlugPage() {
                       currentValue ? 'bg-primary border-primary' : 'border-muted-foreground'
                     }`}
                   >
-                    {currentValue && <span className="text-primary-foreground text-xs">✓</span>}
+                    {!!currentValue && <span className="text-primary-foreground text-xs">✓</span>}
                   </div>
                   <span className="text-lg">{q.placeholder ?? 'Confirmar'}</span>
                 </button>
