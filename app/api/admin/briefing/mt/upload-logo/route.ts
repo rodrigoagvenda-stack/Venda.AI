@@ -28,15 +28,17 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop();
     const filePath = `briefing-logos/${configId}-${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
+    // Usa service role para bypassar RLS do storage
+    const service = createServiceClient();
+
+    const { error: uploadError } = await service.storage
       .from('user-uploads')
       .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage.from('user-uploads').getPublicUrl(filePath);
+    const { data: { publicUrl } } = service.storage.from('user-uploads').getPublicUrl(filePath);
 
-    const service = createServiceClient();
     await service
       .from('briefing_company_config')
       .update({ logo_url: publicUrl, updated_at: new Date().toISOString() })
