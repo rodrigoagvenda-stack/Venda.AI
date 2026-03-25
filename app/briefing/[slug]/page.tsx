@@ -205,7 +205,7 @@ export default function BriefingSlugPage() {
               <img src={config.logo_url} alt={config.company_name} className="h-12 object-contain" />
             </div>
           )}
-          <h1 className="text-4xl md:text-5xl font-semibold">{config.welcome_title}</h1>
+          <h1 className="text-4xl md:text-5xl font-semibold text-balance leading-tight">{config.welcome_title}</h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">{config.welcome_message}</p>
           <Button
             size="lg"
