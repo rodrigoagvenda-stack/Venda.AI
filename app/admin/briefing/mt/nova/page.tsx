@@ -19,7 +19,6 @@ export default function BriefingMtNovaPage() {
   const [form, setForm] = useState({
     slug: '',
     company_name: '',
-    logo_url: '',
     primary_color: '#000000',
     welcome_title: 'Bem-vindo ao Briefing',
     welcome_message: 'Vamos conhecer melhor a sua empresa e entender como podemos ajudar.',
@@ -105,14 +104,7 @@ export default function BriefingMtNovaPage() {
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input
-              value={form.logo_url}
-              onChange={(e) => update('logo_url', e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">O logo pode ser enviado após a criação, na tela de edição.</p>
           <div className="space-y-2">
             <Label>Cor primária</Label>
             <div className="flex items-center gap-3">

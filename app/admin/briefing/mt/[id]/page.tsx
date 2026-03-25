@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Trash2, GripVertical, Loader2, Save, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, GripVertical, Loader2, Save, ExternalLink, Upload, X } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,6 +73,7 @@ export default function BriefingMtEditPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [config, setConfig] = useState<Config | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
@@ -124,6 +125,24 @@ export default function BriefingMtEditPage() {
       toast.error(err.message || 'Erro ao salvar');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadLogo(file: File) {
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('configId', id);
+      const res = await fetch('/api/admin/briefing/mt/upload-logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      updateConfig('logo_url', data.logo_url);
+      toast.success('Logo enviado!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar logo');
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -249,8 +268,44 @@ export default function BriefingMtEditPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input value={config.logo_url} onChange={(e) => updateConfig('logo_url', e.target.value)} placeholder="https://..." />
+            <Label>Logo</Label>
+            <div className="flex items-center gap-4">
+              {config.logo_url ? (
+                <div className="relative w-24 h-12 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={config.logo_url} alt="logo" className="max-h-10 max-w-[88px] object-contain" />
+                  <button
+                    onClick={() => updateConfig('logo_url', '')}
+                    className="absolute top-0.5 right-0.5 bg-background rounded-full p-0.5 shadow"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-24 h-12 rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-xs">
+                  Sem logo
+                </div>
+              )}
+              <Label
+                htmlFor="logo-upload"
+                className="cursor-pointer flex items-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-muted transition-colors"
+              >
+                {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploadingLogo ? 'Enviando...' : 'Escolher imagem'}
+              </Label>
+              <input
+                id="logo-upload"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadLogo(file);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">JPG, PNG, WEBP ou SVG — máx. 2MB</p>
           </div>
           <div className="space-y-2">
             <Label>Cor primária</Label>
