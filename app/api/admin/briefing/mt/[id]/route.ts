@@ -82,36 +82,69 @@ export async function PATCH(
       if (error) throw error;
     }
 
-    // --- Salvar questions (delete + insert para evitar conflito de unique) ---
+    // --- Salvar questions: update existentes, insert novas, delete removidas ---
     if (body.questions) {
       const questions: any[] = body.questions;
 
-      // Sempre deleta tudo e reinsere para evitar conflito em (config_id, field_key)
-      await service.from('briefing_questions').delete().eq('config_id', params.id);
+      // IDs que vieram do frontend (existentes)
+      const sentIds = questions.filter((q) => q.id && !q._new).map((q) => q.id as string);
 
-      if (questions.length === 0) {
-        return NextResponse.json({ success: true, questions: [] });
+      // Deleta apenas as que foram removidas pelo usuário
+      const { data: currentQ } = await service
+        .from('briefing_questions')
+        .select('id')
+        .eq('config_id', params.id);
+
+      const toDelete = (currentQ ?? [])
+        .map((q: any) => q.id as string)
+        .filter((id) => !sentIds.includes(id));
+
+      if (toDelete.length > 0) {
+        await service.from('briefing_questions').delete().in('id', toDelete);
       }
 
-      const rows = questions.map((q, idx) => ({
-        config_id: params.id,
-        label: q.label,
-        field_key: q.field_key,
-        question_type: q.question_type,
-        options: q.options?.length ? q.options : null,
-        placeholder: q.placeholder || null,
-        is_required: q.is_required,
-        order_index: idx,
-      }));
+      // Update existentes
+      const toUpdate = questions.filter((q) => q.id && !q._new);
+      for (const q of toUpdate) {
+        await service
+          .from('briefing_questions')
+          .update({
+            label: q.label,
+            field_key: q.field_key,
+            question_type: q.question_type,
+            options: q.options?.length ? q.options : null,
+            placeholder: q.placeholder || null,
+            is_required: q.is_required,
+            order_index: questions.indexOf(q),
+          })
+          .eq('id', q.id);
+      }
 
-      const { data: savedQ, error: qErr } = await service
+      // Insert novas
+      const toInsert = questions.filter((q) => !q.id || q._new);
+      if (toInsert.length > 0) {
+        const rows = toInsert.map((q) => ({
+          config_id: params.id,
+          label: q.label,
+          field_key: q.field_key,
+          question_type: q.question_type,
+          options: q.options?.length ? q.options : null,
+          placeholder: q.placeholder || null,
+          is_required: q.is_required,
+          order_index: questions.indexOf(q),
+        }));
+        const { error: insertErr } = await service.from('briefing_questions').insert(rows);
+        if (insertErr) throw insertErr;
+      }
+
+      // Retorna lista atualizada
+      const { data: savedQ } = await service
         .from('briefing_questions')
-        .insert(rows)
-        .select();
+        .select('*')
+        .eq('config_id', params.id)
+        .order('order_index', { ascending: true });
 
-      if (qErr) throw qErr;
-
-      return NextResponse.json({ success: true, questions: savedQ });
+      return NextResponse.json({ success: true, questions: savedQ ?? [] });
     }
 
     return NextResponse.json({ success: true });
