@@ -82,26 +82,18 @@ export async function PATCH(
       if (error) throw error;
     }
 
-    // --- Upsert questions ---
+    // --- Salvar questions (delete + insert para evitar conflito de unique) ---
     if (body.questions) {
       const questions: any[] = body.questions;
 
-      // Delete questions that are no longer in the list
-      const existingIds = questions.filter((q) => q.id && !q._new).map((q) => q.id);
-      if (existingIds.length > 0) {
-        await service
-          .from('briefing_questions')
-          .delete()
-          .eq('config_id', params.id)
-          .not('id', 'in', `(${existingIds.join(',')})`);
-      } else {
-        // All are new — delete everything for this config first
-        await service.from('briefing_questions').delete().eq('config_id', params.id);
+      // Sempre deleta tudo e reinsere para evitar conflito em (config_id, field_key)
+      await service.from('briefing_questions').delete().eq('config_id', params.id);
+
+      if (questions.length === 0) {
+        return NextResponse.json({ success: true, questions: [] });
       }
 
-      // Upsert all questions
       const rows = questions.map((q, idx) => ({
-        ...(q.id && !q._new ? { id: q.id } : {}),
         config_id: params.id,
         label: q.label,
         field_key: q.field_key,
@@ -114,7 +106,7 @@ export async function PATCH(
 
       const { data: savedQ, error: qErr } = await service
         .from('briefing_questions')
-        .upsert(rows, { onConflict: 'id' })
+        .insert(rows)
         .select();
 
       if (qErr) throw qErr;
