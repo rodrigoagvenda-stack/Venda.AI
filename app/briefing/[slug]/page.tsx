@@ -164,10 +164,27 @@ export default function BriefingSlugPage() {
   // ---------------------------------------------------------------------------
 
   function selectAndAdvance(key: string, value: string) {
-    updateAnswer(key, value);
+    const updatedAnswers = { ...answers, [key]: value };
+    setAnswers(updatedAnswers);
     setTimeout(() => {
-      if (step === total - 1) handleSubmit();
-      else setStep((s) => s + 1);
+      if (step === total - 1) {
+        // Submete com as respostas atualizadas — evita stale closure
+        setIsSubmitting(true);
+        fetch(`/api/briefing/public/${slug}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: updatedAnswers }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.success) throw new Error(data.message || 'Erro ao enviar');
+            setStep(total);
+          })
+          .catch((err) => toast.error(err.message || 'Erro ao enviar briefing'))
+          .finally(() => setIsSubmitting(false));
+      } else {
+        setStep((s) => s + 1);
+      }
     }, 300);
   }
 
