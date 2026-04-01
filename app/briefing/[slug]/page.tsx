@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -226,6 +226,9 @@ export default function BriefingSlugPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="max-w-2xl w-full text-center space-y-8 animate-in fade-in duration-500">
+          <div className="flex justify-center">
+            <CheckCircle2 className="w-20 h-20 text-green-500" />
+          </div>
           <h1 className="text-4xl md:text-5xl font-semibold">Tudo certo!</h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto">{config.success_message}</p>
         </div>
