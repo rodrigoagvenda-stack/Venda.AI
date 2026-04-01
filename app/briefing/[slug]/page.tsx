@@ -380,26 +380,22 @@ export default function BriefingSlugPage() {
               </>
             )}
 
-            {/* ---- select (dropdown) ---- */}
+            {/* ---- select (botões com auto-avanço) ---- */}
             {q.question_type === 'select' && (
-              <>
-                <Select
-                  value={String(currentValue ?? '')}
-                  onValueChange={(val) => updateAnswer(q.field_key, val)}
-                >
-                  <SelectTrigger className="h-14 text-lg">
-                    <SelectValue placeholder={q.placeholder ?? 'Selecione...'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {q.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button size="lg" onClick={advance} disabled={q.is_required && !currentValue}>
-                  OK <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </>
+              <div className="space-y-3">
+                {q.options?.map((opt, idx) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => selectAndAdvance(q.field_key, opt.value)}
+                    className="w-full text-left p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-all flex items-center gap-4 group"
+                  >
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center font-semibold">
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <span className="text-lg">{opt.label || opt.value}</span>
+                  </button>
+                ))}
+              </div>
             )}
 
             {/* ---- radio (auto-advance) ---- */}
@@ -414,7 +410,7 @@ export default function BriefingSlugPage() {
                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-muted group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center font-semibold">
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span className="text-lg">{opt.label}</span>
+                    <span className="text-lg">{opt.label || opt.value}</span>
                   </button>
                 ))}
               </div>
@@ -447,7 +443,7 @@ export default function BriefingSlugPage() {
                         >
                           {active && <span className="text-primary-foreground text-xs">✓</span>}
                         </div>
-                        <span className="text-lg">{opt.label}</span>
+                        <span className="text-lg">{opt.label || opt.value}</span>
                       </button>
                     );
                   })}

@@ -193,6 +193,16 @@ export default function BriefingMtEditPage() {
   }
 
   function updateOption(qIdx: number, oIdx: number, field: 'value' | 'label', val: string) {
+    // Auto-preenche label a partir do value se label ainda estiver vazio
+    if (field === 'value') {
+      const q = questions[qIdx];
+      const opt = q.options[oIdx];
+      if (!opt.label) {
+        const opts = q.options.map((o, i) => i === oIdx ? { ...o, value: val, label: val } : o);
+        updateQ(qIdx, 'options', opts);
+        return;
+      }
+    }
     const q = questions[qIdx];
     const opts = q.options.map((o, i) => (i === oIdx ? { ...o, [field]: val } : o));
     updateQ(qIdx, 'options', opts);
