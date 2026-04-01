@@ -68,6 +68,13 @@ export default function BriefingListPage() {
   const [deletingPauta, setDeletingPauta] = useState<number | null>(null);
   const [deletingCliente, setDeletingCliente] = useState<number | null>(null);
 
+  // MT Responses
+  const [mtResponses, setMtResponses] = useState<any[]>([]);
+  const [totalMt, setTotalMt] = useState(0);
+  const [searchMt, setSearchMt] = useState('');
+  const [currentPageMt, setCurrentPageMt] = useState(1);
+  const [viewingMt, setViewingMt] = useState<any | null>(null);
+
   const formUrl = typeof window !== 'undefined' ? `${window.location.origin}/brief` : '';
   const pautaUrl = typeof window !== 'undefined' ? `${window.location.origin}/pauta` : '';
   const clienteUrl = typeof window !== 'undefined' ? `${window.location.origin}/cliente` : '';
@@ -75,6 +82,10 @@ export default function BriefingListPage() {
   useEffect(() => {
     fetchResponses();
   }, [search]);
+
+  useEffect(() => {
+    fetchMtResponses();
+  }, [searchMt]);
 
   useEffect(() => {
     fetchPautas();
@@ -135,6 +146,32 @@ export default function BriefingListPage() {
       setTotalClientes(data.total || 0);
     } catch (error: any) {
       console.error('Error fetching clientes:', error);
+    }
+  }
+
+  async function fetchMtResponses() {
+    try {
+      const params = new URLSearchParams();
+      if (searchMt) params.append('search', searchMt);
+      const res = await fetch(`/api/admin/briefing/mt/responses?${params}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setMtResponses(data.data || []);
+      setTotalMt(data.total || 0);
+    } catch (error: any) {
+      console.error('Error fetching MT responses:', error);
+    }
+  }
+
+  async function handleDeleteMt(id: string) {
+    try {
+      const res = await fetch(`/api/admin/briefing/mt/responses?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      toast.success('Resposta excluída');
+      fetchMtResponses();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao excluir');
     }
   }
 
@@ -210,6 +247,11 @@ export default function BriefingListPage() {
   const totalPagesCliente = Math.ceil(clientes.length / itemsPerPage);
   const startIndexCliente = (currentPageCliente - 1) * itemsPerPage;
   const paginatedClientes = clientes.slice(startIndexCliente, startIndexCliente + itemsPerPage);
+
+  // Pagination MT
+  const totalPagesMt = Math.ceil(mtResponses.length / itemsPerPage);
+  const startIndexMt = (currentPageMt - 1) * itemsPerPage;
+  const paginatedMt = mtResponses.slice(startIndexMt, startIndexMt + itemsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -980,6 +1022,104 @@ export default function BriefingListPage() {
                 Excluir
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- MT Responses ---- */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardList className="h-4 w-4 text-primary" />
+              Formulários Dinâmicos ({totalMt})
+            </CardTitle>
+            <Input
+              placeholder="Buscar por resposta..."
+              value={searchMt}
+              onChange={(e) => setSearchMt(e.target.value)}
+              className="max-w-xs h-8 text-sm"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          {paginatedMt.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Nenhuma resposta encontrada</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">Formulário</th>
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">Nome</th>
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">WhatsApp</th>
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">Data</th>
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">Webhook</th>
+                    <th className="p-3 text-left text-xs font-medium text-muted-foreground">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedMt.map((r: any) => (
+                    <tr key={r.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-3 text-sm font-medium">{r.briefing_company_config?.company_name ?? '—'}</td>
+                      <td className="p-3 text-sm">{r.answers?.nome_responsavel || r.answers?.nome || '—'}</td>
+                      <td className="p-3 text-sm text-muted-foreground">{r.answers?.whatsapp || '—'}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{formatDateTime(r.submitted_at)}</td>
+                      <td className="p-3">
+                        {r.webhook_sent ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-gray-500" />
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setViewingMt(r)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMt(r.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {totalPagesMt > 1 && (
+            <div className="mt-4">
+              <SimplePagination currentPage={currentPageMt} totalPages={totalPagesMt} onPageChange={setCurrentPageMt} />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal ver MT response */}
+      {viewingMt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Respostas — {viewingMt.briefing_company_config?.company_name}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setViewingMt(null)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(viewingMt.answers as Record<string, unknown>).map(([key, val]) => (
+                <div key={key} className="text-sm">
+                  <span className="font-medium text-muted-foreground font-mono">{key}:</span>{' '}
+                  <span>{Array.isArray(val) ? val.join(', ') : String(val ?? '—')}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{formatDateTime(viewingMt.submitted_at)}</p>
           </div>
         </div>
       )}
