@@ -257,10 +257,21 @@ export default function BriefingSlugPage() {
 
       <div className="flex items-center justify-center min-h-screen p-4 pt-20">
         <div className="max-w-2xl w-full animate-in fade-in duration-300">
-          {/* Counter */}
-          <p className="text-sm text-muted-foreground mb-4">
-            {step + 1} → {total}
-          </p>
+          {/* Counter + voltar */}
+          <div className="flex items-center gap-3 mb-4">
+            {step > 0 && (
+              <button
+                onClick={() => setStep((s) => s - 1)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Voltar"
+              >
+                ← Voltar
+              </button>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {step + 1} → {total}
+            </p>
+          </div>
 
           <div className="space-y-6">
             {/* Label */}
