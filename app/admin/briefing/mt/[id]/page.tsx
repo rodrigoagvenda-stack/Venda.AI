@@ -153,7 +153,7 @@ export default function BriefingMtEditPage() {
   function addQuestion() {
     const newQ: Question = {
       label: '',
-      field_key: '',
+      field_key: `campo_${Date.now()}`,
       question_type: 'text',
       options: [],
       placeholder: '',
@@ -167,7 +167,18 @@ export default function BriefingMtEditPage() {
 
   function updateQ(idx: number, field: string, value: unknown) {
     setQuestions((prev) =>
-      prev.map((q, i) => (i === idx ? { ...q, [field]: value } : q))
+      prev.map((q, i) => {
+        if (i !== idx) return q;
+        const updated = { ...q, [field]: value };
+        // Auto-popula field_key a partir do label se ainda não foi editado manualmente
+        if (field === 'label' && typeof value === 'string') {
+          const autoKey = value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+          if (!q.field_key || q.field_key.startsWith('campo_')) {
+            updated.field_key = autoKey || q.field_key;
+          }
+        }
+        return updated;
+      })
     );
   }
 
