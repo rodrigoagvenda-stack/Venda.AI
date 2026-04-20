@@ -599,6 +599,16 @@ export default function EmpresaDetailPage() {
                   placeholder="Token de acesso"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="n8n_webhook_url">Webhook N8N (Atendimento)</Label>
+                <Input
+                  id="n8n_webhook_url"
+                  value={company.n8n_webhook_url || ''}
+                  onChange={(e) => setCompany({ ...company, n8n_webhook_url: e.target.value })}
+                  placeholder="https://n8n.suaempresa.com/webhook/..."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

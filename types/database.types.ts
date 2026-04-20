@@ -12,6 +12,7 @@ export interface Company {
   last_extraction_month?: string;
   whatsapp_instance?: string;
   whatsapp_token?: string;
+  n8n_webhook_url?: string;
   is_active: boolean;
   subscription_expires_at?: string;
   created_at: string;
