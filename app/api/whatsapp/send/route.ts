@@ -68,28 +68,7 @@ export async function POST(request: NextRequest) {
 
     const leadId = conversation.id_do_lead || null;
 
-    // 4. Enviar mensagem via n8n/WhatsApp
-    const whatsappResult = await sendWhatsAppMessage({
-      number: phoneNumber,
-      text: message || '',
-      messageType: type,
-      mediaUrl: mediaUrl || '',
-      caption: caption || '',
-      filename: filename || '',
-      company_id: parseInt(companyId),
-      url_instancia: company.whatsapp_instance,
-      token: company.whatsapp_token,
-      n8n_webhook_url: (company as any).n8n_webhook_url || '',
-      conversa_id: conversationId.toString(),
-      lead_id: leadId ? leadId.toString() : '',
-      message_id: '',
-    });
-
-    if (!whatsappResult.success) {
-      throw new Error('Erro ao enviar mensagem via WhatsApp');
-    }
-
-    // 5. Preparar dados da mensagem
+    // 4. Preparar dados da mensagem
     const messageData: any = {
       company_id: companyId, // 🔒 Segurança: isolamento por empresa
       id_da_conversacao: conversationId,
@@ -130,6 +109,23 @@ export async function POST(request: NextRequest) {
 
     if (messageError) throw messageError;
     if (conversationError) throw conversationError;
+
+    // 6. Disparar webhook N8N em fire-and-forget (não bloqueia a resposta)
+    sendWhatsAppMessage({
+      number: phoneNumber,
+      text: message || '',
+      messageType: type,
+      mediaUrl: mediaUrl || '',
+      caption: caption || '',
+      filename: filename || '',
+      company_id: parseInt(companyId),
+      url_instancia: company.whatsapp_instance,
+      token: company.whatsapp_token,
+      n8n_webhook_url: (company as any).n8n_webhook_url || '',
+      conversa_id: conversationId.toString(),
+      lead_id: leadId ? leadId.toString() : '',
+      message_id: savedMessage?.id?.toString() || '',
+    }).catch((err) => console.error('[WhatsApp] Webhook fire-and-forget error:', err));
 
     // 7. Registrar log de forma assíncrona (não bloqueia resposta)
     supabase.from('system_logs').insert({
