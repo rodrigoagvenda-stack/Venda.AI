@@ -643,9 +643,7 @@ export default function AtendimentoPage() {
         phoneNumber: selectedConversation.numero_de_telefone,
         companyId: company!.id,
       }),
-    }).catch(error => {
-      console.error('Error sending typing status:', error);
-    });
+    }).catch(() => {});
 
     // Configurar timeout para parar de enviar após 3 segundos
     typingTimeoutRef.current = setTimeout(() => {
