@@ -62,10 +62,7 @@ export async function POST(req: NextRequest) {
 
       if (!uazapiResponse.ok) {
         console.error('UAZapi typing error:', result);
-        return NextResponse.json(
-          { success: false, message: 'Erro ao enviar status de digitando' },
-          { status: 500 }
-        );
+        return NextResponse.json({ success: false, message: 'Erro ao enviar status de digitando' });
       }
 
       return NextResponse.json({
@@ -75,10 +72,7 @@ export async function POST(req: NextRequest) {
       });
     } catch (error) {
       console.error('Error calling UAZapi typing:', error);
-      return NextResponse.json(
-        { success: false, message: 'Erro ao chamar API do WhatsApp' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: 'Erro ao chamar API do WhatsApp' });
     }
   } catch (error) {
     console.error('Error in typing presence endpoint:', error);

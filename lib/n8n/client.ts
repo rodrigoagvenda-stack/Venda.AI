@@ -219,11 +219,12 @@ export async function sendWhatsAppMessage(payload: {
   caption?: string;
   filename?: string;
   company_id: number;
-  url_instancia: string; // URL base da instância UAZapi
-  token: string; // Token de autenticação
+  url_instancia: string;
+  token: string;
   conversa_id: string;
   lead_id: string;
   message_id: string;
+  n8n_webhook_url: string;
 }): Promise<N8NResponse> {
   try {
     console.log('[WhatsApp] Enviando mensagem via n8n:', {
@@ -232,7 +233,13 @@ export async function sendWhatsAppMessage(payload: {
       url_instancia: payload.url_instancia,
     });
 
-    const response = await fetch(N8N_WEBHOOK_WHATSAPP, {
+    const webhookUrl = payload.n8n_webhook_url || N8N_WEBHOOK_WHATSAPP;
+
+    if (!webhookUrl) {
+      throw new Error('Webhook N8N não configurado para esta empresa. Configure em Admin > Empresas.');
+    }
+
+    const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

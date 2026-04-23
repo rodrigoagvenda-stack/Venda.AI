@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       // Buscar credenciais WhatsApp da empresa
       supabase
         .from('companies')
-        .select('whatsapp_instance, whatsapp_token')
+        .select('whatsapp_instance, whatsapp_token, n8n_webhook_url')
         .eq('id', companyId)
         .single()
     ]);
@@ -77,8 +77,9 @@ export async function POST(request: NextRequest) {
       caption: caption || '',
       filename: filename || '',
       company_id: parseInt(companyId),
-      url_instancia: company.whatsapp_instance, // URL base da instância UAZapi
-      token: company.whatsapp_token, // Token de autenticação
+      url_instancia: company.whatsapp_instance,
+      token: company.whatsapp_token,
+      n8n_webhook_url: (company as any).n8n_webhook_url || '',
       conversa_id: conversationId.toString(),
       lead_id: leadId ? leadId.toString() : '',
       message_id: '',
