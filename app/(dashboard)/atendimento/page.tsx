@@ -1003,6 +1003,7 @@ export default function AtendimentoPage() {
                   >
                     {msg.direcao === 'inbound' && (
                       <Avatar className="h-8 w-8">
+                        <AvatarImage src={selectedConversation.whatsapp_photo_url ?? undefined} />
                         <AvatarFallback className="text-xs">
                           {getInitials(selectedConversation.nome_do_contato || 'C')}
                         </AvatarFallback>
@@ -1072,6 +1073,9 @@ export default function AtendimentoPage() {
                     </MessageContextMenu>
                     {msg.direcao === 'outbound' && (
                       <Avatar className="h-8 w-8">
+                        {msg.sender_type !== 'ai' && (
+                          <AvatarImage src={user?.photo_url ?? undefined} />
+                        )}
                         <AvatarFallback className="text-xs bg-green-600 text-white">
                           {msg.sender_type === 'ai' ? (
                             <Bot className="h-4 w-4" />
