@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
 
     const phone = sender_pn.replace('@s.whatsapp.net', '').replace(/\D/g, '');
-    const phoneSuffix = phone.slice(-10);
+    // Últimos 8 dígitos (número sem DDD) para casar com/sem dígito 9
+    const phoneSuffix = phone.slice(-8);
 
     const { data: conv } = await supabase
       .from('conversas_do_whatsapp')
