@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendWhatsAppMessage } from '@/lib/n8n/client';
-import { uazapiRequest } from '@/lib/utils/uazapi';
 
 export async function POST(request: NextRequest) {
   try {
@@ -111,33 +110,7 @@ export async function POST(request: NextRequest) {
     if (messageError) throw messageError;
     if (conversationError) throw conversationError;
 
-    // 6. Enviar via UAZapi diretamente
-    const uazapiConfig = { instance: company.whatsapp_instance, token: company.whatsapp_token };
-    if (type === 'text') {
-      uazapiRequest(uazapiConfig, '/send/text', 'POST', {
-        phone: phoneNumber,
-        message: message || '',
-      }).catch((err) => console.error('[UAZapi] Erro ao enviar texto:', err));
-    } else if (type === 'image') {
-      uazapiRequest(uazapiConfig, '/send/image', 'POST', {
-        phone: phoneNumber,
-        image: mediaUrl,
-        caption: caption || '',
-      }).catch((err) => console.error('[UAZapi] Erro ao enviar imagem:', err));
-    } else if (type === 'document') {
-      uazapiRequest(uazapiConfig, '/send/document', 'POST', {
-        phone: phoneNumber,
-        document: mediaUrl,
-        filename: filename || '',
-      }).catch((err) => console.error('[UAZapi] Erro ao enviar documento:', err));
-    } else if (type === 'audio') {
-      uazapiRequest(uazapiConfig, '/send/audio', 'POST', {
-        phone: phoneNumber,
-        audio: mediaUrl,
-      }).catch((err) => console.error('[UAZapi] Erro ao enviar áudio:', err));
-    }
-
-    // Notificar n8n em fire-and-forget se webhook configurado (para processamento adicional)
+    // 6. Disparar n8n para envio real via UAZapi
     const webhookUrl = (company as any).n8n_webhook_url;
     if (webhookUrl) {
       sendWhatsAppMessage({
@@ -154,7 +127,9 @@ export async function POST(request: NextRequest) {
         conversa_id: conversationId.toString(),
         lead_id: leadId ? leadId.toString() : '',
         message_id: savedMessage?.id?.toString() || '',
-      }).catch((err) => console.error('[N8N] Webhook fire-and-forget error:', err));
+      }).catch((err) => console.error('[N8N] Erro ao chamar webhook:', err));
+    } else {
+      console.warn(`[N8N] Webhook não configurado para empresa ${companyId}`);
     }
 
     // 7. Registrar log de forma assíncrona (não bloqueia resposta)
