@@ -125,7 +125,10 @@ export async function POST(request: NextRequest) {
         token: company.whatsapp_token,
         n8n_webhook_url: webhookUrl,
         conversa_id: conversationId.toString(),
+        id_da_conversacao: conversationId.toString(),
         lead_id: leadId ? leadId.toString() : '',
+        id_do_lead: leadId ? leadId.toString() : '',
+        numero_de_telefone: phoneNumber,
         message_id: savedMessage?.id?.toString() || '',
       }).catch((err) => console.error('[N8N] Erro ao chamar webhook:', err));
     } else {

@@ -225,6 +225,9 @@ export async function sendWhatsAppMessage(payload: {
   lead_id: string;
   message_id: string;
   n8n_webhook_url: string;
+  id_do_lead?: string;
+  id_da_conversacao?: string;
+  numero_de_telefone?: string;
 }): Promise<N8NResponse> {
   try {
     console.log('[WhatsApp] Enviando mensagem via n8n:', {
