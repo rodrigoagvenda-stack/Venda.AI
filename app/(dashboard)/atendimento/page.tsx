@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Search, Send, Phone, Mail, Building2, Tag, User, Bot, Mic, Paperclip, ArrowLeft, Image, FileText, Video, Download, File, Clock, UserCircle2 } from 'lucide-react';
 import { useUser } from '@/lib/hooks/useUser';
 import { createClient } from '@/lib/supabase/client';
@@ -35,6 +35,7 @@ interface Conversation {
   status_da_conversa: string;
   etiquetas: string[];
   id_do_lead?: number;
+  whatsapp_photo_url?: string | null;
   lead?: Lead;
   assigned_to?: number | null;
 }
@@ -880,6 +881,7 @@ export default function AtendimentoPage() {
                 >
                   <div className="flex items-start gap-3">
                     <Avatar>
+                      <AvatarImage src={conv.whatsapp_photo_url ?? undefined} />
                       <AvatarFallback>
                         {getInitials(conv.nome_do_contato || conv.numero_de_telefone)}
                       </AvatarFallback>
@@ -929,6 +931,7 @@ export default function AtendimentoPage() {
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <Avatar className="h-10 w-10">
+                      <AvatarImage src={selectedConversation.whatsapp_photo_url ?? undefined} />
                       <AvatarFallback>
                         {getInitials(
                           selectedConversation.nome_do_contato ||
